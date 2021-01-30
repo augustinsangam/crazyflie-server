@@ -15,6 +15,7 @@ class RobotHandler(object):
         if RobotHandler.__instance is None:
             RobotHandler.__instance = object.__new__(cls)
         RobotHandler.__instance.robots = dict()  # dict[str, Robot]
+        
         # Fors tests only
         RobotHandler.__instance.robots["robot1"] = {"name": "robot1", "speed": 1.2574998, "batteryPercentage": 96,
                                                     "localisation": {"x": 20, "y": 2, "z": 15}, "lastUpdate": "je sais pas", "isOn": True}
