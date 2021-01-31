@@ -1,41 +1,47 @@
-# server
+# Server
 
 Server connected to drones and dashboard
 
-TODO: multi-threaded bjoern
+## Getting started
 
-INSTALL UWSGI BINARY AND UWSGI PYTHON3 MODULE FROM YOUR DISTRO
+Please follow steps below to launch the server.
 
-### CREATE PYTHON ENVIRONMENT ###
+```bash
+# Install python env
+sudo apt-get install python-is-python3 python3-venv
+
+# Create environment
 python3 -m venv .venv
 
-### ACTIVATE ENVIRONMENT ###
+# Activate the environment
 . ./.venv/bin/activate
 
-### UPDATE PIP JUST IN CASE ###
+# Update pip just in case
 pip install -U pip
 
-### INSTALL WHEEL PACKAGE
+# Install wheel package
 pip install wheel
 
-### INSTALL DEPENDENCIES ###
+# Install dependencies
 pip install -r requirements.txt
 
-### START APP IN DEVELOPMENT MODE ###
-python3 app.py
+# Start app in dev mode
+python3 server.py
 
-### START APP IN PRODUCTION MODE ###
-uwsgi --ini=wsgi.ini
+# Start app in production mode
+# uwsgi --ini=wsgi.ini
+```
 
-### DEACTIVATE ENVIRONMENT ###
-deactivate
+## Others scripts
 
-### EXTRACT DEPENDENCIES ###
+```bash
+# Extract dependencies
 >requirements.txt pip freeze
 
-### UPDATE DEPENDENCIES ###
+# Update dependencies 
 mv requirements.txt requirements.txt.orig
 <requirements.txt.orig >requirements.txt sed 's/==/>=/g'
 rm requirements.txt.orig
 pip install -U -r requirements.txt
 >requirements.txt pip freeze
+```

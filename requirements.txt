@@ -4,6 +4,6 @@ itsdangerous==1.1.0
 Jinja2==2.11.2
 MarkupSafe==1.1.1
 Werkzeug==1.0.1           
-Flask-Sockets==0.2.1.1
+Flask-Sockets==0.2.1
 gevent==21.1.2              
 gevent-websocket==0.10.1
