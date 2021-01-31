@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
+import socket
+import threading
 from typing import Set
+
 from flask import Flask
 from flask_sockets import Sockets
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
-
-import socket
-import threading
 
 from dashboard.dashboard_handler import DashboardHandler
 
