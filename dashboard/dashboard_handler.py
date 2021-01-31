@@ -1,4 +1,5 @@
 import json
+import threading
 from io import StringIO
 
 from robots.robot import Robot
@@ -13,7 +14,10 @@ class DashboardHandler(object):
         super().__init__()
         self.ws = ws
         self.sendAllRobotsStatus()
-        self.handleCommunications()
+        self.thread = threading.Thread(
+            target=self.handleCommunications,
+        )
+        self.thread.start()
 
     def handleCommunications(self) -> None:
         while not self.ws.closed:
@@ -21,7 +25,8 @@ class DashboardHandler(object):
             self.onReceiveMessage(message)
 
     def onReceiveMessage(self, message: str) -> None:
-        print(message)
+        if message == None:
+            return
         parsedMessage = self.parseMessage(message)
         print('Message recieved')
         if parsedMessage['type'] == "take_off":
@@ -40,6 +45,7 @@ class DashboardHandler(object):
         return
 
     def parseMessage(self, message: str) -> dict:
+        print(message)
         return json.load(StringIO(message))
 
     def sendAllRobotsStatus(self) -> None:
