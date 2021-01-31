@@ -20,7 +20,7 @@ class RobotHandler(object):
                 "name": "robot1",
                 "speed": 1.2574998,
                 "batteryPercentage": 96,
-                "localisation": {"x": 20, "y": 2, "z": 15},
+                "localization": {"x": 20, "y": 2, "z": 15},
                 "lastUpdate": "je sais pas",
                 "isOn": True
             },
@@ -28,7 +28,7 @@ class RobotHandler(object):
                 "name": "robot2",
                 "speed": 2.8,
                 "batteryPercentage": 58,
-                "localisation": {"x": 56, "y": 21, "z": 30},
+                "localization": {"x": 56, "y": 21, "z": 30},
                 "lastUpdate": "je sais pas",
                 "isOn": True
             }

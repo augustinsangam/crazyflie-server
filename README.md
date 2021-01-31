@@ -35,6 +35,9 @@ python3 server.py
 ## Others scripts
 
 ```bash
+# Deactivate environment
+deactivate
+
 # Extract dependencies
 >requirements.txt pip freeze
 
