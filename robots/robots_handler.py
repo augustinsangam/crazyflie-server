@@ -21,7 +21,7 @@ class RobotHandler(object):
                 "speed": 1.2574998,
                 "batteryPercentage": 96,
                 "localisation": {"x": 20, "y": 2, "z": 15},
-                "lastUpdate": "je sais pas",
+                "lastUpdate": 0,
                 "isOn": True
             },
             "robot2": {
@@ -29,7 +29,7 @@ class RobotHandler(object):
                 "speed": 2.8,
                 "batteryPercentage": 58,
                 "localisation": {"x": 56, "y": 21, "z": 30},
-                "lastUpdate": "je sais pas",
+                "lastUpdate": 0,
                 "isOn": True
             }
         }

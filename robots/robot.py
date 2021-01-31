@@ -8,6 +8,5 @@ class Robot(TypedDict):
     speed: float
     batteryPercentage: int
     localisation: Localization
-    lastUpdate: str
+    lastUpdate: int
     isOn: bool
-
