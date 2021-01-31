@@ -18,24 +18,25 @@ class DashboadHandler(object):
       self.onRecieveMessage(message)
 
   def onRecieveMessage(self, message: str) -> None:
+    print(message)
     parsedMessage = self.parseMessage(message)
     print('Message recieved')
-    if parsedMessage.type == "take_off":
-      self.takeOff(parsedMessage.data.robotName)
-    elif parsedMessage.type == "land":
-      self.land(parsedMessage.data.robotName)
+    if parsedMessage['type'] == "take_off":
+      self.takeOff(parsedMessage['data']['robotName'])
+    elif parsedMessage['type'] == "land":
+      self.land(parsedMessage['data']['robotName'])
     else:
       raise(Exception('Unrecognized command type'))
 
-  def takeOff(robotName: str) -> None:
+  def takeOff(self, robotName: str) -> None:
     print(f'take off command for {robotName}')
     return
 
-  def land(robotName: str) -> None:
+  def land(self, robotName: str) -> None:
     print(f'land command for {robotName}')
     return
 
-  def parseMessage(message) -> dict:
+  def parseMessage(self, message:str) -> dict:
     return json.load(StringIO(message))
 
   def sendAllRobotsStatus(self) -> None:
