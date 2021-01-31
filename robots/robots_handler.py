@@ -6,6 +6,8 @@ Singleton class to manage robots and their states
 from typing import Dict, Union
 
 from robots.robot import Robot
+from gevent import monkey
+monkey.patch_all()
 
 
 class RobotHandler(object):
