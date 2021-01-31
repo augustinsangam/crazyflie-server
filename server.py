@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 
-from dashboard.dashboard_hadler import DashboadHandler
 from flask import Flask
 from flask_sockets import Sockets
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 
+from dashboard.dashboard_handler import DashboardHandler
 
 app = Flask(__name__)
 sockets = Sockets(app)
 
 
-@sockets.route('/echo')
+@sockets.route('/dashboard')
 def echo_socket(ws):
-    dashboardHadler = DashboadHandler(ws)  
+    dashboardHandler = DashboardHandler(ws)  
 
 @app.route('/')
 def hello():

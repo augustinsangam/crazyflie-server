@@ -1,10 +1,11 @@
 import json
 from io import StringIO
+
 from robots.robot import Robot
 from robots.robots_handler import RobotHandler
 
 
-class DashboadHandler(object):
+class DashboardHandler(object):
 
   def __init__(self, ws) -> None:
     super().__init__()
@@ -15,9 +16,9 @@ class DashboadHandler(object):
   def handleCommunications(self) -> None:
     while not self.ws.closed:
       message = self.ws.receive()
-      self.onRecieveMessage(message)
+      self.onReceiveMessage(message)
 
-  def onRecieveMessage(self, message: str) -> None:
+  def onReceiveMessage(self, message: str) -> None:
     print(message)
     parsedMessage = self.parseMessage(message)
     print('Message recieved')
