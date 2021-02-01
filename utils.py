@@ -17,3 +17,12 @@ class Sender():
     def sendFromDashboardToRobots(self, message):
         for robotHandler in self.__instance.robotHandlers:
             robotHandler.sendMessage(message)
+
+    # Might not be usefull
+    # def dropDashboardHandler(self, dashboardHandler) -> None:
+    #     self.__instance.dashboardHandlers.remove(dashboardHandler)
+    #     print('DashboardHandler closed')
+
+    def dropRobotHandler(self, robotHandler) -> None:
+        self.__instance.robotHandlers.remove(robotHandler)
+        print('RobotHandler closed')

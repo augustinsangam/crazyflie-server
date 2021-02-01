@@ -11,6 +11,7 @@ class RobotCommunicationHandler(object):
     def __init__(self, clientSocket) -> None:
         super().__init__()
         self.clientSocket = clientSocket
+        self.active = True
 
         self.thread = threading.Thread(
             target=self.handleCommunications,
@@ -18,20 +19,23 @@ class RobotCommunicationHandler(object):
         self.thread.start()
 
     def handleCommunications(self):
-        while True:
+        while self.active == True:
             print('wait for reception')
 
             message = self.clientSocket.recv(1024)
-            print(f'Received {message}')
+            print(f'Recieved {message}')
             self.onReceivedMessage(message)
 
     def onReceivedMessage(self, message):
-        if message == None:
+        if message == b'':
+            self.clientSocket.close()
+            Sender(None, None).dropRobotHandler(self)
+            self.active = False
             return
         parsedMessage = self.parseMessage(message.decode('utf-8'))
 
         if parsedMessage['type'] == 'robot_update':
-            parsedMessage['data']['lastUpdate'] = time.time_ns()
+            parsedMessage['data']['timestamp'] = time.time_ns()
             RobotUtils().setRobot(parsedMessage['data'])
         Sender(None, None).sendFromRobotToHandler(parsedMessage)
 
