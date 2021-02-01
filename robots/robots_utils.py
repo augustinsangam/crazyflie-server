@@ -3,10 +3,13 @@ robot-handler.py
 Singleton class to manage robots and their states
 """
 
+import time
 from typing import Dict, Union
 
-from robots.robot import Robot
 from gevent import monkey
+
+from robots.robot import Robot
+
 monkey.patch_all()
 
 
@@ -22,16 +25,16 @@ class RobotUtils(object):
                 "name": "robot1",
                 "speed": 1.2574998,
                 "batteryPercentage": 96,
-                "localisation": {"x": 20, "y": 2, "z": 15},
-                "lastUpdate": 0,
+                "localization": {"x": 20, "y": 2, "z": 15},
+                "lastUpdate": int(time.time()),
                 "isOn": True
             },
             "robot2": {
                 "name": "robot2",
                 "speed": 2.8,
                 "batteryPercentage": 58,
-                "localisation": {"x": 56, "y": 21, "z": 30},
-                "lastUpdate": 0,
+                "localization": {"x": 56, "y": 21, "z": 30},
+                "lastUpdate": int(time.time()),
                 "isOn": True
             }
         }

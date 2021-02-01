@@ -25,9 +25,6 @@ class RobotCommunicationHandler(object):
             print(f'Received {message}')
             self.onReceivedMessage(message)
 
-            self.clientSocket.send(bytes('ACK!', 'ascii'))
-            print('ACK sent')
-
     def onReceivedMessage(self, message):
         if message == None:
             return

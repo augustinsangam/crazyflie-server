@@ -1,11 +1,12 @@
 import json
+import threading
 from io import StringIO
 
 from robots.robot import Robot
 from robots.robots_utils import RobotUtils
 from utils import Sender
 
-import threading
+from dashboard.message import Message
 
 
 class DashboardHandler(object):
@@ -54,8 +55,11 @@ class DashboardHandler(object):
     def sendAllRobotsStatus(self) -> None:
         robots: dict[str, Robot] = RobotUtils().getRobots()
         for robot in robots.values():
-            self.sendMessage(robot)
+            self.sendMessage({
+                "type": "robot_update",
+                "data": robot
+            })
 
-    def sendMessage(self, message: dict) -> None:
+    def sendMessage(self, message: Message) -> None:
         messageStr = json.dumps(message)
         self.ws.send(messageStr)
