@@ -10,13 +10,13 @@ from gevent import monkey
 monkey.patch_all()
 
 
-class RobotHandler(object):
+class RobotUtils(object):
 
     __instance = None  # The singleton
 
     def __new__(cls):
-        if RobotHandler.__instance is None:
-            RobotHandler.__instance = object.__new__(cls)
+        if RobotUtils.__instance is None:
+            RobotUtils.__instance = object.__new__(cls)
         robots: Dict[str, Robot] = {
             "robot1": {
                 "name": "robot1",
@@ -35,8 +35,8 @@ class RobotHandler(object):
                 "isOn": True
             }
         }
-        RobotHandler.__instance.robots = robots
-        return RobotHandler.__instance
+        RobotUtils.__instance.robots = robots
+        return RobotUtils.__instance
 
     def getRobots(self) -> dict:
         return self.__instance.robots
@@ -50,4 +50,4 @@ class RobotHandler(object):
         return None
 
     def setRobot(self, robot: Robot) -> None:
-        self.__instance.robots[robot.name] = robot
+        self.__instance.robots[robot['name']] = robot

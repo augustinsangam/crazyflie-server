@@ -5,16 +5,19 @@ from flask import Flask
 from flask_sockets import Sockets
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
+from utils import Sender
+from dashboard.dashboard_handler import DashboardHandler
+from robots.robot_communication_handler import RobotCommunicationHandler
 
 import socket
 import threading
 
-from dashboard.dashboard_handler import DashboardHandler
 
 app = Flask(__name__)
 sockets = Sockets(app)
 
 dashboardHandlers = set()
+robotHandlers = set()
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 3995
@@ -30,24 +33,13 @@ def launchServer():
     print('waiting for connection')
     while True:
 
-        conn, addr = server.accept()
+        clientSocket, addr = server.accept()
 
         print('Connection address:', addr)
 
-        client_handler = threading.Thread(
-            target=handle_client_connection,
-            args=(conn,)
-        )
-        client_handler.start()
+        robotHandler = RobotCommunicationHandler(clientSocket)
 
-
-def handle_client_connection(client_socket):
-    while True:
-        print('wait for reception')
-        request = client_socket.recv(1024)
-        print(f'Received {request}')
-        client_socket.send(bytes('ACK!', 'ascii'))
-        print('ACK sent')
+        robotHandlers.add(robotHandler)
 
 
 @sockets.route('/dashboard')
@@ -65,6 +57,7 @@ def hello():
 
 
 if __name__ == "__main__":
+    sender = Sender(dashboardHandlers, robotHandlers)
     server = pywsgi.WSGIServer(('', 5000), app, handler_class=WebSocketHandler)
     t = threading.Thread(target=launchServer)
     t.daemon = True

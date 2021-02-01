@@ -45,3 +45,14 @@ rm requirements.txt.orig
 pip install -U -r requirements.txt
 >requirements.txt pip freeze
 ```
+
+## Python client for testing TCP server
+
+```python
+
+  import socket
+  client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  client.connect(('127.0.0.1', 3995))
+  client.send('')
+  response = client.recv(4096)
+```

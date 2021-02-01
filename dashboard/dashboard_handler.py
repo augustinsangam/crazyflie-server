@@ -2,7 +2,8 @@ import json
 from io import StringIO
 
 from robots.robot import Robot
-from robots.robots_handler import RobotHandler
+from robots.robots_utils import RobotUtils
+from utils import Sender
 
 import threading
 
@@ -17,7 +18,6 @@ class DashboardHandler(object):
             target=self.handleCommunications,
         )
         self.thread.start()
-        # self.handleCommunications()
 
     def handleCommunications(self) -> None:
         while not self.ws.closed:
@@ -29,10 +29,13 @@ class DashboardHandler(object):
             return
         parsedMessage = self.parseMessage(message)
         print('Message recieved')
+        Sender(None, None).sendFromDashboardToRobots(parsedMessage)
+
         if parsedMessage['type'] == "take_off":
             self.takeOff(parsedMessage['data']['robotName'])
         elif parsedMessage['type'] == "land":
             self.land(parsedMessage['data']['robotName'])
+
         else:
             raise(Exception('Unrecognized command type'))
 
@@ -49,7 +52,7 @@ class DashboardHandler(object):
         return json.load(StringIO(message))
 
     def sendAllRobotsStatus(self) -> None:
-        robots: dict[str, Robot] = RobotHandler().getRobots()
+        robots: dict[str, Robot] = RobotUtils().getRobots()
         for robot in robots.values():
             self.sendMessage(robot)
 
