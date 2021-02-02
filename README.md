@@ -6,9 +6,9 @@ Server connected to drones and dashboard
 
 Please follow steps below to launch the server.
 
-```bash
+```sh
 # Install python env
-sudo apt-get install python3-venv
+sudo apt-get install python3-venv uwsgi-plugin-python3
 
 # Create environment
 python3 -m venv .venv
@@ -26,7 +26,7 @@ pip install wheel
 pip install -r requirements.txt
 
 # Start app in dev mode
-python3 server.py
+python src/server.py
 
 # Start app in production mode
 # uwsgi --ini=wsgi.ini
@@ -34,7 +34,7 @@ python3 server.py
 
 ## Others scripts
 
-```bash
+```sh
 # Deactivate environment
 deactivate
 
@@ -51,7 +51,7 @@ pip install -U -r requirements.txt
 
 ## Python client for testing TCP server
 
-```python
+```py
 import socket
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(('127.0.0.1', 3995))
