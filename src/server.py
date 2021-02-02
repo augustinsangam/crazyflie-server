@@ -50,7 +50,7 @@ def echo_socket(ws):
     handler = DashboardHandler(ws)
     dashboardHandlers.add(handler)
     handler.thread.join()
-    print('handler closed')
+    print('dashboardHandler closed')
     dashboardHandlers.remove(handler)
 
 

@@ -33,9 +33,9 @@ class DashboardHandler(object):
         Sender(None, None).sendFromDashboardToRobots(parsedMessage)
 
         if parsedMessage['type'] == "take_off":
-            self.takeOff(parsedMessage['data']['robotName'])
+            self.takeOff(parsedMessage['data']['name'])
         elif parsedMessage['type'] == "land":
-            self.land(parsedMessage['data']['robotName'])
+            self.land(parsedMessage['data']['name'])
 
         else:
             raise(Exception('Unrecognized command type'))

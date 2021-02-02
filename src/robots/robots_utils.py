@@ -20,25 +20,17 @@ class RobotUtils(object):
     def __new__(cls):
         if RobotUtils.__instance is None:
             RobotUtils.__instance = object.__new__(cls)
-        robots: Dict[str, Robot] = {
-            "robot1": {
-                "name": "robot1",
-                "speed": 1.2574998,
-                "batteryPercentage": 96,
-                "localization": {"x": 20, "y": 2, "z": 15},
-                "lastUpdate": int(time.time()),
-                "isOn": True
-            },
-            "robot2": {
-                "name": "robot2",
-                "speed": 2.8,
-                "batteryPercentage": 58,
-                "localization": {"x": 56, "y": 21, "z": 30},
-                "lastUpdate": int(time.time()),
-                "isOn": True
+            robots: Dict[str, Robot] = {
+                "robot_0": {
+                    "name": "robot_0",
+                    "speed": 2.8,
+                    "battery": 58,
+                    "position": [10, 12, 3],
+                    "timestamp": int(time.time()),
+                    "isOn": True
+                }
             }
-        }
-        RobotUtils.__instance.robots = robots
+            RobotUtils.__instance.robots = robots
         return RobotUtils.__instance
 
     def getRobots(self) -> dict:
