@@ -8,7 +8,7 @@ Please follow steps below to launch the server.
 
 ```bash
 # Install python env
-sudo apt-get install python-is-python3 python3-venv
+sudo apt-get install python3-venv
 
 # Create environment
 python3 -m venv .venv
@@ -52,10 +52,9 @@ pip install -U -r requirements.txt
 ## Python client for testing TCP server
 
 ```python
-
-  import socket
-  client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-  client.connect(('127.0.0.1', 3995))
-  client.send('')
-  response = client.recv(4096)
+import socket
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client.connect(('127.0.0.1', 3995))
+client.send('')
+response = client.recv(4096)
 ```
