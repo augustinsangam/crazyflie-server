@@ -33,14 +33,17 @@ class RobotCommunicationHandler(object):
             Sender(None, None).dropRobotHandler(self)
             self.active = False
             return
-        parsedMessage = self.parseMessage(message.decode('utf-8'))
-
-        if parsedMessage['type'] == 'robot_update':
-            if self.robot == None:
-                self.robot = parsedMessage['data']['name']
-            parsedMessage['data']['timestamp'] = time.time_ns()
-            RobotUtils().setRobot(parsedMessage['data'])
-        Sender(None, None).sendFromRobotToHandler(parsedMessage)
+        try:
+            parsedMessage = self.parseMessage(message.decode('utf-8'))
+        except:
+            print('Wrong json format')
+        else:
+            if parsedMessage['type'] == 'robot_update':
+                if self.robot == None:
+                    self.robot = parsedMessage['data']['name']
+                parsedMessage['data']['timestamp'] = time.time_ns()
+                RobotUtils().setRobot(parsedMessage['data'])
+            Sender(None, None).sendFromRobotToHandler(parsedMessage)
 
     def parseMessage(self, message: str) -> dict:
         print(message)

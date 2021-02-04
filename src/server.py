@@ -14,6 +14,8 @@ from robots.robot_communication_handler import RobotCommunicationHandler
 
 import socket
 import threading
+# import signal
+# import sys
 
 
 app = Flask(__name__)
@@ -25,6 +27,11 @@ robotHandlers = set()
 TCP_IP = '127.0.0.1'
 TCP_PORT = 3995
 BUFFER_SIZE = 20
+
+
+# def signal_handler(signal, frame):
+
+#     sys.exit(0)
 
 
 def launchServer():
@@ -62,6 +69,7 @@ def hello():
 if __name__ == "__main__":
     sender = Sender(dashboardHandlers, robotHandlers)
     server = pywsgi.WSGIServer(('', 5000), app, handler_class=WebSocketHandler)
+    # signal.signal(signal.SIGINT, signal_handler)
     t = threading.Thread(target=launchServer)
     t.daemon = True
     t.start()

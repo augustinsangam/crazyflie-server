@@ -28,17 +28,21 @@ class DashboardHandler(object):
     def onReceiveMessage(self, message: str) -> None:
         if message == None:
             return
-        parsedMessage = self.parseMessage(message)
-        print('Message recieved')
-        Sender(None, None).sendFromDashboardToRobots(parsedMessage)
 
-        if parsedMessage['type'] == "take_off":
-            self.takeOff(parsedMessage['data']['name'])
-        elif parsedMessage['type'] == "land":
-            self.land(parsedMessage['data']['name'])
-
+        try:
+            parsedMessage = self.parseMessage(message)
+        except:
+            print('Wrong json format')
         else:
-            raise(Exception('Unrecognized command type'))
+            print('Message recieved')
+            Sender(None, None).sendFromDashboardToRobots(parsedMessage)
+
+            if parsedMessage['type'] == "take_off":
+                self.takeOff(parsedMessage['data']['name'])
+            elif parsedMessage['type'] == "land":
+                self.land(parsedMessage['data']['name'])
+            else:
+                raise(Exception('Unrecognized command type'))
 
     def takeOff(self, robotName: str) -> None:
         print(f'take off command for {robotName}')
