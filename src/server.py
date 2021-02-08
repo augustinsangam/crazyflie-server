@@ -2,63 +2,58 @@
 
 import socket
 import threading
-from typing import Set
+import signal
 
+from typing import Set
 from flask import Flask
 from flask_sockets import Sockets
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
-from utils import Sender
-from dashboard.dashboard_handler import DashboardHandler
-from robots.robot_communication_handler import RobotCommunicationHandler
-
-import socket
-import threading
-# import signal
-# import sys
+from src.utils import Sender
+from src.dashboard.dashboard_communication_handler import DashboardCommunicationHandler
+from src.drone.drone_communication_handler import DroneCommunicationHandler
 
 
 app = Flask(__name__)
 sockets = Sockets(app)
 
-dashboardHandlers = set()
-robotHandlers = set()
+dashboardCommunicationHandlers = set()
+droneCommunicationHandlers = set()
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 3995
 BUFFER_SIZE = 20
 
 
-# def signal_handler(signal, frame):
+def exitHandler(signal, frame):
+    for dashboardHandler in dashboardCommunicationHandlers:
+        dashboardHandler.socket.close()
 
-#     sys.exit(0)
+    for droneCommunicationHandler in droneCommunicationHandlers:
+        droneCommunicationHandler.socket.settimeout(0)
+
+    # webSocketServer.stop()
 
 
 def launchServer():
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server.bind((TCP_IP, TCP_PORT))
-    server.listen(2)
+    TCPServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    TCPServer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    TCPServer.bind((TCP_IP, TCP_PORT))
+    TCPServer.listen(2)
 
-    print('waiting for connection')
     while True:
-
-        clientSocket, addr = server.accept()
-
-        print('Connection address:', addr)
-
-        robotHandler = RobotCommunicationHandler(clientSocket)
-
-        robotHandlers.add(robotHandler)
+        clientSocket, addr = TCPServer.accept()
+        print('Drone connected')
+        droneCommunicationHandler = DroneCommunicationHandler(clientSocket)
+        droneCommunicationHandlers.add(droneCommunicationHandler)
 
 
 @sockets.route('/dashboard')
-def echo_socket(ws):
-    handler = DashboardHandler(ws)
-    dashboardHandlers.add(handler)
-    handler.thread.join()
-    print('dashboardHandler closed')
-    dashboardHandlers.remove(handler)
+def echo_socket(webSocker):
+    communication = DashboardCommunicationHandler(webSocker)
+    dashboardCommunicationHandlers.add(communication)
+    communication.thread.join()
+    dashboardCommunicationHandlers.remove(communication)
 
 
 @app.route('/')
@@ -67,10 +62,17 @@ def hello():
 
 
 if __name__ == "__main__":
-    sender = Sender(dashboardHandlers, robotHandlers)
-    server = pywsgi.WSGIServer(('', 5000), app, handler_class=WebSocketHandler)
-    # signal.signal(signal.SIGINT, signal_handler)
-    t = threading.Thread(target=launchServer)
-    t.daemon = True
-    t.start()
-    server.serve_forever()
+    sender = Sender(dashboardCommunicationHandlers, droneCommunicationHandlers)
+
+    signal.signal(signal.SIGINT, exitHandler)
+
+    webSocketServer = pywsgi.WSGIServer(
+        ('', 5000), app, handler_class=WebSocketHandler)
+
+    TCPServer = threading.Thread(target=launchServer)
+    TCPServer.daemon = True
+    TCPServer.start()
+
+    webSocketServer.serve_forever()
+
+    print('Stopped')

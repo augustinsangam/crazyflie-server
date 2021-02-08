@@ -1,17 +1,17 @@
 from io import StringIO
-from robots.robots_utils import RobotUtils
-from utils import Sender
+from src.drone.drone_utils import DroneUtils
+from src.utils import Sender
 
 import json
 import threading
 import time
 
 
-class RobotCommunicationHandler(object):
-    def __init__(self, clientSocket) -> None:
+class DroneCommunicationHandler(object):
+    def __init__(self, socket) -> None:
         super().__init__()
-        self.clientSocket = clientSocket
-        self.robot = None
+        self.socket = socket
+        self.drone = None
         self.active = True
 
         self.thread = threading.Thread(
@@ -23,35 +23,36 @@ class RobotCommunicationHandler(object):
         while self.active == True:
             print('wait for reception')
 
-            message = self.clientSocket.recv(1024)
+            message = self.socket.recv(1024)
             print(f'Recieved {message}')
             self.onReceivedMessage(message)
 
     def onReceivedMessage(self, message):
         if message == b'':
-            self.clientSocket.close()
-            Sender(None, None).dropRobotHandler(self)
+            self.socket.close()
+            Sender(None, None).removeDroneCommunicationHandler(self)
             self.active = False
+            print('Drone communication handler closed')
             return
         try:
             parsedMessage = self.parseMessage(message.decode('utf-8'))
         except:
             print('Wrong json format')
         else:
-            if parsedMessage['type'] == 'robot_update':
-                if self.robot == None:
-                    self.robot = parsedMessage['data']['name']
+            if parsedMessage['type'] == 'pulse':
+                if self.drone == None:
+                    self.drone = parsedMessage['data']['name']
                 parsedMessage['data']['timestamp'] = time.time_ns()
-                RobotUtils().setRobot(parsedMessage['data'])
-            Sender(None, None).sendFromRobotToHandler(parsedMessage)
+                DroneUtils().setDrone(parsedMessage['data'])
+            Sender(None, None).sendToDashboards(parsedMessage)
 
     def parseMessage(self, message: str) -> dict:
         print(message)
         return json.load(StringIO(message))
 
     def sendMessage(self, message: dict) -> None:
-        if message['data']['name'] == self.robot:
+        if message['data']['name'] == self.drone or message['data']['name'] == '*':
             messageStr = json.dumps(message)
-            self.clientSocket.send(bytes(messageStr, 'ascii'))
+            self.socket.send(bytes(messageStr, 'ascii'))
         else:
             return

@@ -2,18 +2,17 @@ import json
 import threading
 from io import StringIO
 
-from robots.robot import Robot
-from robots.robots_utils import RobotUtils
-from utils import Sender
+from src.drone.drone_utils import DroneUtils, Drone
+from src.utils import Sender
 
-from dashboard.message import Message
+from src.dashboard.message import Message
 
 
-class DashboardHandler(object):
+class DashboardCommunicationHandler(object):
 
-    def __init__(self, ws) -> None:
+    def __init__(self, socket) -> None:
         super().__init__()
-        self.ws = ws
+        self.socket = socket
         self.sendAllRobotsStatus()
         self.thread = threading.Thread(
             target=self.handleCommunications,
@@ -21,12 +20,13 @@ class DashboardHandler(object):
         self.thread.start()
 
     def handleCommunications(self) -> None:
-        while not self.ws.closed:
-            message = self.ws.receive()
+        while not self.socket.closed:
+            message = self.socket.receive()
             self.onReceiveMessage(message)
 
     def onReceiveMessage(self, message: str) -> None:
         if message == None:
+            print('dashboard connexion closed')
             return
 
         try:
@@ -35,7 +35,7 @@ class DashboardHandler(object):
             print('Wrong json format')
         else:
             print('Message recieved')
-            Sender(None, None).sendFromDashboardToRobots(parsedMessage)
+            Sender(None, None).sendToDrones(parsedMessage)
 
             if parsedMessage['type'] == "take_off":
                 self.takeOff(parsedMessage['data']['name'])
@@ -44,12 +44,12 @@ class DashboardHandler(object):
             else:
                 raise(Exception('Unrecognized command type'))
 
-    def takeOff(self, robotName: str) -> None:
-        print(f'take off command for {robotName}')
+    def takeOff(self, droneName: str) -> None:
+        print(f'take off command for {droneName}')
         return
 
-    def land(self, robotName: str) -> None:
-        print(f'land command for {robotName}')
+    def land(self, droneName: str) -> None:
+        print(f'land command for {droneName}')
         return
 
     def parseMessage(self, message: str) -> dict:
@@ -57,13 +57,13 @@ class DashboardHandler(object):
         return json.load(StringIO(message))
 
     def sendAllRobotsStatus(self) -> None:
-        robots: dict[str, Robot] = RobotUtils().getRobots()
-        for robot in robots.values():
+        drones: dict[str, Drone] = DroneUtils().getDrones()
+        for drone in drones.values():
             self.sendMessage({
-                "type": "robot_update",
-                "data": robot
+                "type": "pulse",
+                "data": drone
             })
 
     def sendMessage(self, message: Message) -> None:
         messageStr = json.dumps(message)
-        self.ws.send(messageStr)
+        self.socket.send(messageStr)
