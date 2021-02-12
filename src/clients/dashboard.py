@@ -1,14 +1,15 @@
 import json
 import threading
 from io import StringIO
+from typing import Dict
 
-from src.drone.drone_utils import DroneUtils, Drone
-from src.utils import Sender
+from models.drone import Drone
+from models.message import Message
+from services.communications import CommunicationService
+from services.drones import DronesService
 
-from src.dashboard.message import Message
 
-
-class DashboardCommunicationHandler(object):
+class DashboardClient:
 
     def __init__(self, socket) -> None:
         super().__init__()
@@ -35,7 +36,7 @@ class DashboardCommunicationHandler(object):
             print('Wrong json format')
         else:
             print('Message recieved')
-            Sender(None, None).sendToDrones(parsedMessage)
+            CommunicationService.sendToArgosClients(parsedMessage)
 
             if parsedMessage['type'] == "take_off":
                 self.takeOff(parsedMessage['data']['name'])
@@ -57,7 +58,7 @@ class DashboardCommunicationHandler(object):
         return json.load(StringIO(message))
 
     def sendAllRobotsStatus(self) -> None:
-        drones: dict[str, Drone] = DroneUtils().getDrones()
+        drones: Dict[str, Drone] = DronesService.getDrones()
         for drone in drones.values():
             self.sendMessage({
                 "type": "pulse",
