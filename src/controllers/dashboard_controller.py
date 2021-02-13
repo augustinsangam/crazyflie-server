@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import logging
 from multiprocessing import Process
 from multiprocessing.context import ProcessError
@@ -7,7 +5,7 @@ from multiprocessing.context import ProcessError
 from clients.dashboard_client import DashboardClient
 from flask import Flask
 from flask_sockets import Sockets
-from gevent import pywsgi
+from gevent import monkey, pywsgi
 from geventwebsocket.handler import WebSocketHandler
 from metaclasses.singleton import Singleton
 from services.communications import CommunicationService
@@ -32,6 +30,7 @@ class DashboardController(metaclass=Singleton):
         return 'Dashboard Controller'
 
     def launchServer(self):
+        monkey.patch_all(subprocess=False)
         webSocketServer = pywsgi.WSGIServer(
             ('', DashboardController.SERVER_PORT),
             DashboardController.app,

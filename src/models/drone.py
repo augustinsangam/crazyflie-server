@@ -1,10 +1,11 @@
-from typing import TypedDict
+from typing import List, TypedDict
 
 
 class Drone(TypedDict):
     name: str
     speed: float
-    battery: int
-    position: dict
+    battery: float
+    position: List[float]
     timestamp: int
-    isOn: bool
+    flying: bool
+    ledOn: bool

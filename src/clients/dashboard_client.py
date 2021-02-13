@@ -4,13 +4,14 @@ import threading
 from io import StringIO
 from typing import Dict
 
+from models.client import Client
 from models.drone import Drone
 from models.message import Message
 from services.communications import CommunicationService
 from services.drones import DronesService
 
 
-class DashboardClient:
+class DashboardClient(Client):
 
     def __init__(self, socket) -> None:
         super().__init__()

@@ -7,6 +7,7 @@ import time
 from typing import Dict, Union
 
 from models.drone import Drone
+from utils.timestamp import getTimestamp
 
 
 class DronesService:
@@ -17,7 +18,7 @@ class DronesService:
             "speed": 2.8,
             "battery": 58,
             "position": [10, 12, 3],
-            "timestamp": int(time.time()),
+            "timestamp": getTimestamp(),
             "isOn": True
         }
     }

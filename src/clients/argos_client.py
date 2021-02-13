@@ -4,22 +4,23 @@ import threading
 import time
 from io import StringIO
 
+from models.client import Client
 from services.communications import CommunicationService
 from services.drones import DronesService
+from utils.timestamp import getTimestamp
 
 
-class ArgosClient:
+class ArgosClient(Client):
     def __init__(self, socket) -> None:
         self.socket = socket
         self.drone = None
-        self.active = True
         self.thread = threading.Thread(
             target=self.handleCommunications,
         )
         self.thread.start()
 
     def handleCommunications(self):
-        while self.active:
+        while True:
             message = self.socket.recv(1024)
             if message == b'':
                 # TODO : CommunicationService.removeDroneCommunicationHandler(self)
@@ -38,7 +39,7 @@ class ArgosClient:
             if parsedMessage['type'] == 'pulse':
                 if self.drone == None:
                     self.drone = parsedMessage['data']['name']
-                parsedMessage['data']['timestamp'] = int(time.time())
+                parsedMessage['data']['timestamp'] = getTimestamp()
                 DronesService().setDrone(parsedMessage['data'])
             CommunicationService.sendToDashboardClients(parsedMessage)
 
