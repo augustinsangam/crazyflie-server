@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
 
+import logging
+
 from gevent import monkey
 
-from controllers.argos import ArgosController
-from controllers.dashboard import DashboardController
-from utils.logger import Logger
+from controllers.argos_controller import ArgosController
+from controllers.dashboard_controller import DashboardController
+from utils.logging import setupLogging
 
 
 def exitHandler(signal, frame):
-    print('CLOSINGGGGGGGGGG')
+    logging.info('CLOSING SERVER APPLICATION')
     pass
 
 
 if __name__ == '__main__':
     monkey.patch_all()
+    setupLogging()
     # signal.signal(signal.SIGINT, exitHandler)
     # signal.signal(signal.SIGTERM, exitHandler)
     # signal.signal(signal.SIGHUP, exitHandler)
-    logger = Logger()
-    logger.log('Launching argos controller')
-    ArgosController().launch()
-    logger.log('Launching dashboard controller')
-    # This last one blocks
-    DashboardController().launch()
+    argosControllerProcess = ArgosController().launch()
+    logging.info('Argos controller launched')
+    dashboardControllerProcess = DashboardController().launch()
+    logging.info('Dashboard controller launched')
+    argosControllerProcess.join()
+    dashboardControllerProcess.join()
+    logging.log('All Controllers have stopped')

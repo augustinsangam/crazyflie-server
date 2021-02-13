@@ -1,11 +1,11 @@
 import json
+import logging
 import threading
 import time
 from io import StringIO
 
 from services.communications import CommunicationService
 from services.drones import DronesService
-from utils.logger import Logger
 
 
 class ArgosClient:
@@ -13,7 +13,6 @@ class ArgosClient:
         self.socket = socket
         self.drone = None
         self.active = True
-        self.logger = Logger()
         self.thread = threading.Thread(
             target=self.handleCommunications,
         )
@@ -25,16 +24,16 @@ class ArgosClient:
             if message == b'':
                 # TODO : CommunicationService.removeDroneCommunicationHandler(self)
                 self.socket.close()
-                self.logger.log('Drone communication handler closed')
+                logging.info('Drone communication handler closed')
                 break
-            print(f'Recieved {message}')
+            logging.info(f'Recieved {message}')
             self.onReceivedMessage(message)
 
     def onReceivedMessage(self, message):
         try:
             parsedMessage = self.parseMessage(message.decode('utf-8'))
         except:
-            print('Wrong json format')
+            logging.info('Wrong json format')
         else:
             if parsedMessage['type'] == 'pulse':
                 if self.drone == None:

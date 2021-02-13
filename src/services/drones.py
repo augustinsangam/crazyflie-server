@@ -11,7 +11,7 @@ from models.drone import Drone
 
 class DronesService:
 
-    drones: Dict[str, Drone] = {
+    __drones: Dict[str, Drone] = {
         "robot_0": {
             "name": "drone_0",
             "speed": 2.8,
@@ -24,18 +24,18 @@ class DronesService:
 
     @staticmethod
     def getDrones() -> dict:
-        return DronesService.drones
+        return DronesService.__drones
 
     @staticmethod
     def setDrones(drones: dict) -> None:
-        DronesService.drones = drones
+        DronesService.__drones = drones
 
     @staticmethod
     def getDrone(droneName: str) -> Union[None, Drone]:
-        if droneName in DronesService.drones:
-            return DronesService.drones[droneName]
+        if droneName in DronesService.__drones:
+            return DronesService.__drones[droneName]
         return None
 
     @staticmethod
     def setDrone(drone: Drone) -> None:
-        DronesService.drones[drone['name']] = drone
+        DronesService.__drones[drone['name']] = drone

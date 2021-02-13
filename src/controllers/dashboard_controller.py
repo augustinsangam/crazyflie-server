@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 
-import threading
+import logging
+from multiprocessing import Process
+from multiprocessing.context import ProcessError
 
-from clients.dashboard import DashboardClient
+from clients.dashboard_client import DashboardClient
 from flask import Flask
 from flask_sockets import Sockets
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 from metaclasses.singleton import Singleton
 from services.communications import CommunicationService
-from utils.logger import Logger
 
 
 class DashboardController(metaclass=Singleton):
@@ -20,7 +21,7 @@ class DashboardController(metaclass=Singleton):
 
     @sockets.route('/dashboard')
     def echo_socket(webSocket):
-        print('Nouveau client')
+        logging.info('Nouveau client')
         client = DashboardClient(webSocket)
         CommunicationService.dashboardClients.add(client)
         client.thread.join()
@@ -30,10 +31,15 @@ class DashboardController(metaclass=Singleton):
     def hello():
         return 'Dashboard Controller'
 
-    def launch(self):
+    def launchServer(self):
         webSocketServer = pywsgi.WSGIServer(
             ('', DashboardController.SERVER_PORT),
             DashboardController.app,
             handler_class=WebSocketHandler
         )
         webSocketServer.serve_forever()
+
+    def launch(self) -> Process:
+        process = Process(target=self.launchServer)
+        process.start()
+        return process

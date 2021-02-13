@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
+import logging
 import socket
-import threading
+from multiprocessing import Process
 
-from clients.argos import ArgosClient
+from clients.argos_client import ArgosClient
 from metaclasses.singleton import Singleton
 from services.communications import CommunicationService
-from utils.logger import Logger
 
 
 class ArgosController(metaclass=Singleton):
@@ -14,8 +14,6 @@ class ArgosController(metaclass=Singleton):
     TCP_PORT = 3995
     BUFFER_SIZE = 20
     N_MAX_DRONES = 2
-
-    logger = Logger()
 
     def launchServer(self):
         TCPServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -25,12 +23,12 @@ class ArgosController(metaclass=Singleton):
 
         while True:
             clientSocket, addr = TCPServer.accept()
-            ArgosController.logger.log(
+            logging.info(
                 f'New simulated drone connected at {addr}')
             client = ArgosClient(clientSocket)
             CommunicationService.argosClients.add(client)
 
-    def launch(self):
-        thread = threading.Thread(target=self.launchServer)
-        thread.daemon = True
-        thread.start()
+    def launch(self) -> Process:
+        process = Process(target=self.launchServer)
+        process.start()
+        return process

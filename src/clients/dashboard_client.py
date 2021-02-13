@@ -1,4 +1,5 @@
 import json
+import logging
 import threading
 from io import StringIO
 from typing import Dict
@@ -27,15 +28,14 @@ class DashboardClient:
 
     def onReceiveMessage(self, message: str) -> None:
         if message == None:
-            print('dashboard connexion closed')
             return
 
         try:
             parsedMessage = self.parseMessage(message)
         except:
-            print('Wrong json format')
+            logging.error('Wrong json format')
         else:
-            print('Message recieved')
+            logging.info(f'Message received : {message}')
             CommunicationService.sendToArgosClients(parsedMessage)
 
             if parsedMessage['type'] == "take_off":
@@ -46,15 +46,14 @@ class DashboardClient:
                 raise(Exception('Unrecognized command type'))
 
     def takeOff(self, droneName: str) -> None:
-        print(f'take off command for {droneName}')
+        logging.info(f'take off command for {droneName}')
         return
 
     def land(self, droneName: str) -> None:
-        print(f'land command for {droneName}')
+        logging.info(f'land command for {droneName}')
         return
 
     def parseMessage(self, message: str) -> dict:
-        print(message)
         return json.load(StringIO(message))
 
     def sendAllRobotsStatus(self) -> None:
