@@ -58,3 +58,11 @@ client.connect(('127.0.0.1', 3995))
 client.send('')
 response = client.recv(4096)
 ```
+
+## Docker
+```bash
+# build
+docker build -t crazyflie-server .
+# run
+docker run -it --name crazyflie-server -p 3995:3995 -p 5000:5000 crazyflie-server
+```
