@@ -9,3 +9,4 @@ class Drone(TypedDict):
     timestamp: int
     flying: bool
     ledOn: bool
+    real: bool

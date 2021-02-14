@@ -1,23 +1,22 @@
 import json
 import logging
-import threading
 from io import StringIO
+from threading import Thread
 from typing import Dict
 
-from models.client import Client
 from models.drone import Drone
 from models.message import Message
 from services.communications import CommunicationService
 from services.drones import DronesService
 
 
-class DashboardClient(Client):
+class DashboardClient:
 
     def __init__(self, socket) -> None:
         super().__init__()
         self.socket = socket
         self.sendAllRobotsStatus()
-        self.thread = threading.Thread(
+        self.thread = Thread(
             target=self.handleCommunications,
         )
         self.thread.start()
@@ -38,6 +37,7 @@ class DashboardClient(Client):
         else:
             logging.info(f'Message received : {message}')
             CommunicationService.sendToArgosClients(parsedMessage)
+            CommunicationService.sendToAllCrazyradioClients(parsedMessage)
 
             if parsedMessage['type'] == "take_off":
                 self.takeOff(parsedMessage['data']['name'])
@@ -58,6 +58,8 @@ class DashboardClient(Client):
         return json.load(StringIO(message))
 
     def sendAllRobotsStatus(self) -> None:
+        logging.info(
+            f'Sending all robots statuts to new Dashboard client {DronesService.getDrones()}')
         drones: Dict[str, Drone] = DronesService.getDrones()
         for drone in drones.values():
             self.sendMessage({

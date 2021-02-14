@@ -1,6 +1,6 @@
 import logging
 import socket
-from multiprocessing import Process
+from threading import Thread
 
 from clients.argos_client import ArgosClient
 from metaclasses.singleton import Singleton
@@ -26,7 +26,7 @@ class ArgosController(metaclass=Singleton):
             client = ArgosClient(clientSocket)
             CommunicationService.argosClients.add(client)
 
-    def launch(self) -> Process:
-        process = Process(target=self.launchServer)
-        process.start()
-        return process
+    def launch(self) -> Thread:
+        thread = Thread(target=self.launchServer)
+        thread.start()
+        return thread

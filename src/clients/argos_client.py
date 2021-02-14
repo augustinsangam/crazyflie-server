@@ -1,20 +1,18 @@
 import json
 import logging
-import threading
-import time
 from io import StringIO
+from threading import Thread
 
-from models.client import Client
 from services.communications import CommunicationService
 from services.drones import DronesService
 from utils.timestamp import getTimestamp
 
 
-class ArgosClient(Client):
+class ArgosClient:
     def __init__(self, socket) -> None:
         self.socket = socket
         self.drone = None
-        self.thread = threading.Thread(
+        self.thread = Thread(
             target=self.handleCommunications,
         )
         self.thread.start()
@@ -40,7 +38,7 @@ class ArgosClient(Client):
                 if self.drone == None:
                     self.drone = parsedMessage['data']['name']
                 parsedMessage['data']['timestamp'] = getTimestamp()
-                DronesService().setDrone(parsedMessage['data'])
+                DronesService.setDrone(parsedMessage['data'])
             CommunicationService.sendToDashboardClients(parsedMessage)
 
     def parseMessage(self, message: str) -> dict:

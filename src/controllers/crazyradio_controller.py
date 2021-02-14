@@ -1,6 +1,6 @@
 import logging
 import time
-from multiprocessing import Process
+from threading import Thread
 from typing import List
 
 import cflib.crtp
@@ -21,6 +21,8 @@ class CrazyradioController(metaclass=Singleton):
             logging.error(
                 'Crazyradio Dongle is not connected. Retrying in 3 secondes.')
             time.sleep(3)
+
+        logging.info(f"Successfully connected to Crazyradio Dongle")
 
         while True:
             interfaces = self.getAvailableInterfaces()
@@ -46,7 +48,7 @@ class CrazyradioController(metaclass=Singleton):
     def getAvailableInterfaces(self) -> List:
         return cflib.crtp.scan_interfaces()
 
-    def launch(self) -> Process:
-        process = Process(target=self.launchServer)
-        process.start()
-        return process
+    def launch(self) -> Thread:
+        thread = Thread(target=self.launchServer)
+        thread.start()
+        return thread

@@ -1,9 +1,8 @@
 """
 robot-handler.py
-Singleton class to manage robots and their states
+Static class to manage robots and their states
 """
 
-import time
 from typing import Dict, Union
 
 from models.drone import Drone

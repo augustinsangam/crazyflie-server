@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
+
 import logging
+
+from gevent import monkey
 
 from controllers.argos_controller import ArgosController
 from controllers.crazyradio_controller import CrazyradioController
@@ -13,6 +16,8 @@ def exitHandler(signal, frame):
     pass
 
 
+monkey.patch_all()
+
 if __name__ == '__main__':
 
     # Some initializations
@@ -24,19 +29,19 @@ if __name__ == '__main__':
     # signal.signal(signal.SIGHUP, exitHandler)
 
     # Crazyradio Controller
-    crazyradioControllerProcess = CrazyradioController().launch()
+    crazyradioControllerThread = CrazyradioController().launch()
     logging.info('Crazyradio controller launched')
 
     # Argos Controller
-    argosControllerProcess = ArgosController().launch()
+    argosControllerThread = ArgosController().launch()
     logging.info('Argos controller launched')
 
     # Dashboard Controller
-    dashboardControllerProcess = DashboardController().launch()
+    dashboardControllerThread = DashboardController().launch()
     logging.info('Dashboard controller launched')
 
-    # Wait for the process to finish
-    crazyradioControllerProcess.join()
-    # argosControllerProcess.join()
-    # dashboardControllerProcess.join()
+    # Wait for the Thread to finish
+    crazyradioControllerThread.join()
+    argosControllerThread.join()
+    dashboardControllerThread.join()
     logging.info('All Controllers have stopped')
