@@ -39,12 +39,16 @@ class DashboardClient:
             CommunicationService.sendToArgosClients(parsedMessage)
             CommunicationService.sendToAllCrazyradioClients(parsedMessage)
 
-            if parsedMessage['type'] == "take_off":
-                self.takeOff(parsedMessage['data']['name'])
-            elif parsedMessage['type'] == "land":
-                self.land(parsedMessage['data']['name'])
-            else:
-                raise(Exception('Unrecognized command type'))
+            # if parsedMessage['type'] == "takeOff":
+            #     self.takeOff(parsedMessage['data']['name'])
+            # elif parsedMessage['type'] == "land":
+            #     self.land(parsedMessage['data']['name'])
+            # elif parsedMessage['type'] == "lighten":
+            #     self.lighten(parsedMessage['data']['name'])
+            # elif parsedMessage['type'] == "darken":
+            #     self.darken(parsedMessage['data']['name'])
+            # else:
+            #     raise(Exception('Unrecognized command type'))
 
     def takeOff(self, droneName: str) -> None:
         logging.info(f'take off command for {droneName}')

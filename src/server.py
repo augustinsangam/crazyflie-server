@@ -3,8 +3,6 @@
 
 import logging
 
-from gevent import monkey
-
 from controllers.argos_controller import ArgosController
 from controllers.crazyradio_controller import CrazyradioController
 from controllers.dashboard_controller import DashboardController
@@ -15,8 +13,6 @@ def exitHandler(signal, frame):
     logging.info('CLOSING SERVER APPLICATION')
     pass
 
-
-monkey.patch_all()
 
 if __name__ == '__main__':
 

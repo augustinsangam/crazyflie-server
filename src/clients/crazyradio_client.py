@@ -60,7 +60,7 @@ class CrazyradioClient:
         logging.info('Disconnected from %s' % uri)
 
     def _app_packet_received(self, data):
-        data = struct.unpack("<Ifffff??", data)
+        data = struct.unpack("<Qfffff??", data)
         self.drone['timestamp'] = data[0]
         self.drone['speed'] = data[1]
         self.drone['battery'] = data[2]

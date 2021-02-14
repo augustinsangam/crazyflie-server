@@ -12,14 +12,14 @@ from utils.timestamp import getTimestamp
 class DronesService:
 
     __drones: Dict[str, Drone] = {
-        "robot_0": {
-            "name": "drone_0",
-            "speed": 2.8,
-            "battery": 58,
-            "position": [10, 12, 3],
-            "timestamp": getTimestamp(),
-            "isOn": True
-        }
+        # "robot_0": {
+        #     "name": "drone_0",
+        #     "speed": 2.8,
+        #     "battery": 58,
+        #     "position": [10, 12, 3],
+        #     "timestamp": getTimestamp(),
+        #     "isOn": True
+        # }
     }
 
     @staticmethod
