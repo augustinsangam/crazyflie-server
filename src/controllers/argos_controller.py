@@ -11,7 +11,7 @@ class ArgosController(metaclass=Singleton):
     TCP_IP = '127.0.0.1'
     TCP_PORT = 3995
     BUFFER_SIZE = 20
-    N_MAX_DRONES = 2
+    N_MAX_DRONES = 10
 
     def launchServer(self):
         TCPServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
