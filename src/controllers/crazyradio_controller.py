@@ -1,5 +1,7 @@
 import logging
+import subprocess
 import time
+from os import getenv
 from threading import Thread
 from typing import List
 
@@ -14,6 +16,7 @@ class CrazyradioController(metaclass=Singleton):
 
     def __init__(self) -> None:
         cflib.crtp.init_drivers(enable_debug_driver=False)
+        pass
 
     def launchServer(self):
 
@@ -24,8 +27,16 @@ class CrazyradioController(metaclass=Singleton):
 
         logging.info(f"Successfully connected to Crazyradio Dongle")
 
+        cf2_bin = getenv('CF2_BIN')
+        if cf2_bin:
+            logging.critical(
+                f'Flashing drone using the cfloader. Ensure yourself to have drones in Bootloader mode')
+            subprocess.call(['python3', '-m', 'cfloader', 'flash',
+                             cf2_bin, 'stm32-fw'])
+
         while True:
             interfaces = self.getAvailableInterfaces()
+
             if len(interfaces) > 0:
                 break
             logging.error(f'No drones found nearby. Retrying in 3 secondes.')

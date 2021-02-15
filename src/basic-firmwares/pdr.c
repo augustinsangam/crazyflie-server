@@ -1,6 +1,6 @@
-#include <string.h>
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 #include <time.h>
 
 #include "app.h"
@@ -12,11 +12,45 @@
 
 #include "log.h"
 #include "param.h"
-
-#include "led.h"
-#include "unistd.h"
-#include "app_channel.h"
 #include "pm.h"
+
+#include "app_channel.h"
+#include "led.h"
+//#include "pm_stm32f4.c"
+#include "unistd.h"
+
+const static float bat671723HS25C[10] = {
+    3.00, // 00%
+    3.78, // 10%
+    3.83, // 20%
+    3.87, // 30%
+    3.89, // 40%
+    3.92, // 50%
+    3.96, // 60%
+    4.00, // 70%
+    4.04, // 80%
+    4.10  // 90%
+};
+
+static int32_t pmBatteryChargeFromVoltage(float voltage)
+{
+  int charge = 0;
+
+  if (voltage < bat671723HS25C[0])
+  {
+    return 0;
+  }
+  if (voltage > bat671723HS25C[9])
+  {
+    return 9;
+  }
+  while (voltage > bat671723HS25C[charge])
+  {
+    charge++;
+  }
+
+  return charge;
+}
 
 struct testPacketRX
 {
