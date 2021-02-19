@@ -81,4 +81,5 @@ class CrazyradioClient:
             elif message['type'] == 'darken':
                 self._cf.appchannel.send_packet(struct.pack("<?", False))
             else:
-                logging.error(f'Unrecognized command {message}')
+                logging.error(
+                    f'Crazyradio got unrecognized command to send : {message}')

@@ -39,3 +39,8 @@ class DronesService:
     @staticmethod
     def setDrone(drone: Drone) -> None:
         DronesService.__drones[drone['name']] = drone
+
+    @staticmethod
+    def removeDrove(droneName: str) -> None:
+        if droneName in DronesService.__drones:
+            del DronesService.__drones[droneName]

@@ -3,6 +3,7 @@ import logging
 from io import StringIO
 from threading import Thread
 
+from models.drone import Drone
 from services.communications import CommunicationService
 from services.drones import DronesService
 from utils.timestamp import getTimestamp
@@ -11,7 +12,17 @@ from utils.timestamp import getTimestamp
 class ArgosClient:
     def __init__(self, socket) -> None:
         self.socket = socket
-        self.drone = None
+        drone: Drone = {
+            "name": '',
+            "speed": 0.0,
+            "battery": 0.0,
+            "position": [0.0, 0.0, 0.0],
+            "timestamp": getTimestamp(),
+            "flying": False,
+            "ledOn": True,
+            "real": False
+        }
+        self.drone = drone
         self.thread = Thread(
             target=self.handleCommunications,
         )
@@ -21,30 +32,29 @@ class ArgosClient:
         while True:
             message = self.socket.recv(1024)
             if message == b'':
-                # TODO : CommunicationService.removeDroneCommunicationHandler(self)
                 self.socket.close()
-                logging.info('Drone communication handler closed')
+                logging.info('ARGoS client connection closed')
                 break
-            logging.info(f'Recieved {message}')
             self.onReceivedMessage(message)
 
     def onReceivedMessage(self, message):
         try:
-            parsedMessage = self.parseMessage(message.decode('utf-8'))
+            messageStr = message.decode('utf-8')
+            parsedMessage = self.parseMessage(messageStr)
         except:
-            logging.info('Wrong json format')
+            droneName: str = self.drone['name']
+            logging.debug(
+                f'ARGoS client {droneName} receive a wrong json format : {messageStr}')
         else:
             if parsedMessage['type'] == 'pulse':
-                if self.drone == None:
-                    self.drone = parsedMessage['data']['name']
-                parsedMessage['data']['timestamp'] = getTimestamp()
+                self.drone = parsedMessage['data']
                 DronesService.setDrone(parsedMessage['data'])
-            CommunicationService.sendToDashboardClients(parsedMessage)
+                CommunicationService.sendToDashboardClients(parsedMessage)
 
     def parseMessage(self, message: str) -> dict:
         return json.load(StringIO(message))
 
     def sendMessage(self, message: dict) -> None:
-        if message['data']['name'] == self.drone or message['data']['name'] == '*':
+        if message['data']['name'] == self.drone['name'] or message['data']['name'] == '*':
             messageStr = json.dumps(message)
             self.socket.send(bytes(messageStr, 'ascii'))

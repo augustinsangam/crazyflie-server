@@ -24,12 +24,3 @@ class CommunicationService:
     def sendToAllCrazyradioClients(message: Message):
         for client in CommunicationService.crazyRadioClients:
             client.sendMessage(message)
-
-    # Might not be usefull
-    # def dropDashboardHandler(self, dashboardHandler) -> None:
-    #     self.dashboardHandlers.remove(dashboardHandler)
-    #     print('DashboardHandler closed')
-
-    # def removeDroneCommunicationHandler(self, robotHandler) -> None:
-    #     self.droneCommunicationHandlers.remove(robotHandler)
-    #     print('Drone communication handler closed')

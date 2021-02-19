@@ -15,8 +15,8 @@ class DashboardController(metaclass=Singleton):
     SERVER_PORT = 5000
 
     @sockets.route('/dashboard')
-    def echo_socket(webSocket):
-        logging.info('Nouveau client')
+    def handleClient(webSocket):
+        logging.info('New dashboard Client')
         try:
             client = DashboardClient(webSocket)
             CommunicationService.dashboardClients.add(client)

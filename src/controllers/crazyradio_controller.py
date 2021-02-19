@@ -10,6 +10,7 @@ from cflib.crtp.radiodriver import RadioManager
 from clients.crazyradio_client import CrazyradioClient
 from metaclasses.singleton import Singleton
 from services.communications import CommunicationService
+from services.drones import DronesService
 
 
 class CrazyradioController(metaclass=Singleton):
@@ -43,10 +44,28 @@ class CrazyradioController(metaclass=Singleton):
             time.sleep(3)
 
         for interface in interfaces:
-            logging.info(
-                f'New Crazyradio found at interface {interface}')
+            self.handleClient(interface)
+
+    def handleClient(self, interface):
+        logging.info(
+            f'New Crazyradio found at interface {interface}')
+        try:
             client = CrazyradioClient(interface)
             CommunicationService.crazyRadioClients.add(client)
+
+            def onClientDisconnect():
+                droneName: str = client.drone['name']
+                DronesService.removeDrove(droneName)
+                CommunicationService.sendToDashboardClients({
+                    "type": "disconnect",
+                    "data": {
+                        "name": droneName
+                    }
+                })
+
+            client._cf.connection_lost.add_callback(onClientDisconnect)
+        except:
+            pass
 
     def isDongleConnected(self) -> bool:
         crazyradioDriver = RadioManager()
