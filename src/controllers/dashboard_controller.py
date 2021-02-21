@@ -13,6 +13,7 @@ class DashboardController(metaclass=Singleton):
     app = Flask(__name__)
     sockets = Sockets(app)
     SERVER_PORT = 5000
+    webSocketServer = None
 
     @sockets.route('/dashboard')
     def handleClient(webSocket):
@@ -34,9 +35,15 @@ class DashboardController(metaclass=Singleton):
             DashboardController.SERVER_PORT,
             DashboardController.app
         )
+        DashboardController.webSocketServer = webSocketServer
         webSocketServer.serve_forever()
 
     def launch(self) -> Thread:
         thread = Thread(target=self.launchServer)
         thread.start()
         return thread
+
+    def stopServer():
+        for client in CommunicationService.dashboardClients:
+            client.closeClient()
+        DashboardController.webSocketServer.shutdown()

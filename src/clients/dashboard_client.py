@@ -63,7 +63,7 @@ class DashboardClient:
 
     def sendAllRobotsStatus(self) -> None:
         logging.info(
-            f'Sending all robots statuts to new Dashboard client {DronesService.getDrones()}')
+            'Sending all robots statuts to new Dashboard client')
         drones: Dict[str, Drone] = DronesService.getDrones()
         for drone in drones.values():
             self.sendMessage({
@@ -74,3 +74,6 @@ class DashboardClient:
     def sendMessage(self, message: Message) -> None:
         messageStr = json.dumps(message)
         self.socket.send(messageStr)
+
+    def closeClient(self):
+        self.socket.__del__()

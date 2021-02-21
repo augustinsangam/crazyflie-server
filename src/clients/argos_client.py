@@ -1,5 +1,6 @@
 import json
 import logging
+import socket
 from io import StringIO
 from threading import Thread
 
@@ -29,13 +30,17 @@ class ArgosClient:
         self.thread.start()
 
     def handleCommunications(self):
-        while True:
-            message = self.socket.recv(1024)
-            if message == b'':
-                self.socket.close()
-                logging.info('ARGoS client connection closed')
-                break
-            self.onReceivedMessage(message)
+        try:
+            while True:
+                message = self.socket.recv(1024)
+                if message == b'':
+                    self.socket.close()
+                    logging.info('ARGoS client connection closed')
+                    break
+                self.onReceivedMessage(message)
+        except:
+            self.socket.close()
+            logging.info('ARGoS client connection closed')
 
     def onReceivedMessage(self, message):
         try:
@@ -58,3 +63,6 @@ class ArgosClient:
         if message['data']['name'] == self.drone['name'] or message['data']['name'] == '*':
             messageStr = json.dumps(message)
             self.socket.send(bytes(messageStr, 'ascii'))
+
+    def closeClient(self):
+        self.socket.shutdown(socket.SHUT_RDWR)

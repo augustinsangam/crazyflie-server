@@ -15,16 +15,21 @@ from services.drones import DronesService
 
 class CrazyradioController(metaclass=Singleton):
 
+    running = True
+
     def __init__(self) -> None:
         cflib.crtp.init_drivers(enable_debug_driver=False)
         pass
 
     def launchServer(self):
 
-        while not self.isDongleConnected():
+        while not self.isDongleConnected() and CrazyradioController.running:
             logging.error(
                 'Crazyradio Dongle is not connected. Retrying in 3 secondes.')
             time.sleep(3)
+
+        if not CrazyradioController.running:
+            return
 
         logging.info(f"Successfully connected to Crazyradio Dongle")
 
@@ -35,13 +40,16 @@ class CrazyradioController(metaclass=Singleton):
             subprocess.call(['python3', '-m', 'cfloader', 'flash',
                              cf2_bin, 'stm32-fw'])
 
-        while True:
+        while CrazyradioController.running:
             interfaces = self.getAvailableInterfaces()
 
             if len(interfaces) > 0:
                 break
             logging.error(f'No drones found nearby. Retrying in 3 secondes.')
             time.sleep(3)
+
+        if not CrazyradioController.running:
+            return
 
         for interface in interfaces:
             self.handleClient(interface)
@@ -56,12 +64,13 @@ class CrazyradioController(metaclass=Singleton):
             def onClientDisconnect():
                 droneName: str = client.drone['name']
                 DronesService.removeDrove(droneName)
-                CommunicationService.sendToDashboardClients({
-                    "type": "disconnect",
-                    "data": {
-                        "name": droneName
-                    }
-                })
+                if CrazyradioController.running:
+                    CommunicationService.sendToDashboardClients({
+                        "type": "disconnect",
+                        "data": {
+                            "name": droneName
+                        }
+                    })
 
             client._cf.connection_lost.add_callback(onClientDisconnect)
         except:
@@ -82,3 +91,8 @@ class CrazyradioController(metaclass=Singleton):
         thread = Thread(target=self.launchServer)
         thread.start()
         return thread
+
+    def stopServer():
+        CrazyradioController.running = False
+        for client in CommunicationService.crazyRadioClients:
+            client.closeClient()

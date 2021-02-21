@@ -83,3 +83,6 @@ class CrazyradioClient:
             else:
                 logging.error(
                     f'Crazyradio got unrecognized command to send : {message}')
+
+    def closeClient(self):
+        self._cf.close_link()
