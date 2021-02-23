@@ -55,10 +55,14 @@ class CrazyradioController(metaclass=Singleton):
             if not CrazyradioController.running:
                 return
 
-            for interface in newInterfaces:
-                if not interfaces.__contains__(interface):
-                    self.handleClient(interface)
-                    interfaces.append(interface)
+            for newInterface in newInterfaces:
+                handlerInterface = True
+                for interface in interfaces:
+                    if interface == newInterface:
+                        handleInterface = False
+                if handleInterface:
+                    self.handleClient(newInterface)
+                    interfaces.append(newInterface)
 
             newInterfaces.clear()
 
