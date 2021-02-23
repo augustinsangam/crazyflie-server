@@ -40,7 +40,7 @@ class CrazyradioController(metaclass=Singleton):
             subprocess.call(['python3', '-m', 'cfloader', 'flash',
                              cf2_bin, 'stm32-fw'])
 
-        interfaces = List
+        interfaces = None
 
         while True:
             while CrazyradioController.running:
