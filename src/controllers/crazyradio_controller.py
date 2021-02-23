@@ -40,11 +40,13 @@ class CrazyradioController(metaclass=Singleton):
             subprocess.call(['python3', '-m', 'cfloader', 'flash',
                              cf2_bin, 'stm32-fw'])
 
+        interfaces = List
+
         while True:
             while CrazyradioController.running:
-                interfaces = self.getAvailableInterfaces()
+                newInterfaces = self.getAvailableInterfaces()
 
-                if len(interfaces) > 0:
+                if len(newInterfaces) > 0:
                     break
                 logging.error(
                     f'No drones found nearby. Retrying in 3 secondes.')
@@ -53,9 +55,12 @@ class CrazyradioController(metaclass=Singleton):
             if not CrazyradioController.running:
                 return
 
-            for interface in interfaces:
-                self.handleClient(interface)
-            interfaces.clear()
+            for interface in newInterfaces:
+                if not interfaces.__contains__(interface):
+                    self.handleClient(interface)
+                    interfaces.append(interface)
+
+            newInterfaces.clear()
 
     def handleClient(self, interface):
         logging.info(
