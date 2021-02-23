@@ -56,7 +56,7 @@ class CrazyradioController(metaclass=Singleton):
                 return
 
             for newInterface in newInterfaces:
-                handlerInterface = True
+                handleInterface = True
                 for interface in interfaces:
                     if interface == newInterface:
                         handleInterface = False
