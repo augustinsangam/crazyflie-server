@@ -11,7 +11,7 @@ from services.drones import DronesService
 
 
 class ArgosController(metaclass=Singleton):
-    TCP_IP = '127.0.0.1'
+    TCP_IP = '0.0.0.0'
     TCP_PORT = 3995
     BUFFER_SIZE = 20
     N_MAX_DRONES = 10
