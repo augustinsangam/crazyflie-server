@@ -31,7 +31,7 @@ class DashboardController(metaclass=Singleton):
 
     def launchServer(self):
         webSocketServer = ThreadedWebsocketServer(
-            'localhost',
+            '0.0.0.0',
             DashboardController.SERVER_PORT,
             DashboardController.app
         )
