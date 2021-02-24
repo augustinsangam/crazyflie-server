@@ -19,6 +19,17 @@ import threading
 app = Flask(__name__)
 sockets = Sockets(app)
 
+
+def exitHandler(signal, frame):
+    """Function description
+
+        @param signal: signal parameter description
+        @param frame: frame parameter description
+    """
+    logging.info('CLOSING SERVER APPLICATION')
+    pass
+
+
 dashboardHandlers = set()
 robotHandlers = set()
 

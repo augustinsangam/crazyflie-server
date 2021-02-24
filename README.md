@@ -1,6 +1,6 @@
 # Server
 
-Server connected to drones and dashboard
+This repository stores the code of the master-server, which links the dashboard to the ARGoS3 drones or the real drones.
 
 ## Getting started
 
@@ -58,4 +58,49 @@ pip install -U -r requirements.txt
   client.connect(('127.0.0.1', 3995))
   client.send('')
   response = client.recv(4096)
+```
+## Docker
+```bash
+# build
+docker build -t crazyflie-server .
+# run
+docker run -it --name crazyflie-server -p 3995:3995 -p 5000:5000 crazyflie-server
+```
+
+
+## Documentation generation
+To generate the project's documentation :
+
+* Install Doxygen
+  ```bash
+  git clone https://github.com/doxygen/doxygen.git
+  cd doxygen
+  mkdir build && cd build
+  cmake -G "Unix Makefiles" ..
+  make
+  make install
+  ```
+* Once in a while, run Doxygen. Make sure you are in the root directory of the project (`/drone`)
+  ```bash
+  doxygen doc/doxygen-config
+  ```
+
+  The output can be found in the `latex` folders located in `doc`.
+  
+  To generate a PDF :
+  ```bash
+  cd doc/latex
+  make pdf
+  ```
+
+Example of a docstring :
+```python
+def exitHandler(signal, frame):
+    """Function description
+
+        @param signal: signal parameter description
+        @param frame: frame parameter description
+    """
+    logging.info('CLOSING SERVER APPLICATION')
+    pass
 ```

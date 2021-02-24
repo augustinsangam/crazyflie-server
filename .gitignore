@@ -82,6 +82,10 @@ instance/
 docs/_build/
 doc/_build/
 
+# doxygen documentation
+doc/latex
+doc/html
+
 # PyBuilder
 target/
 
