@@ -6,9 +6,9 @@ This repository stores the code of the master-server, which links the dashboard 
 
 Please follow steps below to launch the server.
 
-```bash
+```sh
 # Install python env
-sudo apt-get install python-is-python3 python3-venv
+sudo apt-get install python3-venv uwsgi-plugin-python3
 
 # Create environment
 python3 -m venv .venv
@@ -26,7 +26,7 @@ pip install wheel
 pip install -r requirements.txt
 
 # Start app in dev mode
-python3 server.py
+python src/server.py
 
 # Start app in production mode
 # uwsgi --ini=wsgi.ini
@@ -34,7 +34,7 @@ python3 server.py
 
 ## Others scripts
 
-```bash
+```sh
 # Deactivate environment
 deactivate
 
@@ -51,14 +51,14 @@ pip install -U -r requirements.txt
 
 ## Python client for testing TCP server
 
-```python
-
-  import socket
-  client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-  client.connect(('127.0.0.1', 3995))
-  client.send('')
-  response = client.recv(4096)
+```py
+import socket
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client.connect(('127.0.0.1', 3995))
+client.send('')
+response = client.recv(4096)
 ```
+
 ## Docker
 ```bash
 # build
@@ -66,7 +66,6 @@ docker build -t crazyflie-server .
 # run
 docker run -it --name crazyflie-server -p 3995:3995 -p 5000:5000 crazyflie-server
 ```
-
 
 ## Documentation generation
 To generate the project's documentation :

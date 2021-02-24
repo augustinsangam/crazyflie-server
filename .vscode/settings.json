@@ -1,5 +1,11 @@
 {
     "python.pythonPath": "${workspaceFolder}/.venv/bin/python3",
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/src"
+    ],
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}/src"
+    ],
     "editor.formatOnSave": true,
-    "editor.formatOnType": true,
+    "editor.formatOnType": true
 }
