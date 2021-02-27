@@ -1,26 +1,27 @@
-from typing import Set
+from typing import List
 
-from models.client import Client
+from metaclasses.singleton import Singleton
+from models.drone import Drone
 from models.message import Message
 
 
-class CommunicationService:
+class CommunicationService(metaclass=Singleton):
 
-    dashboardClients: Set[Client] = set()
-    argosClients: Set[Client] = set()
-    crazyRadioClients: Set[Client] = set()
+    def registerControllers(self, dashboard, argos, crazyradio) -> None:
+        self.dashboardController = dashboard
+        self.argosController = argos
+        self.crazyradioController = crazyradio
 
-    @staticmethod
-    def sendToDashboardClients(message: Message):
-        for client in CommunicationService.dashboardClients:
-            client.sendMessage(message)
+    def sendToDashboardController(self, message: Message):
+        self.dashboardController.sendMessage(message)
 
-    @staticmethod
-    def sendToArgosClients(message: Message):
-        for client in CommunicationService.argosClients:
-            client.sendMessage(message)
+    def sendToArgosController(self, message: Message):
+        self.argosController.sendMessage(message)
 
-    @staticmethod
-    def sendToAllCrazyradioClients(message: Message):
-        for client in CommunicationService.crazyRadioClients:
-            client.sendMessage(message)
+    def sendToCrazyradioController(self, message: Message):
+        self.crazyradioController.sendMessage(message)
+
+    def getAllDrones(self) -> List[Drone]:
+        # return list(self.argosController.dronesSet.getDrones().values()) +\
+        #     list(self.crazyradioController.dronesSet.getDrones().values())
+        return []
