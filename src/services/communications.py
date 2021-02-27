@@ -22,6 +22,5 @@ class CommunicationService(metaclass=Singleton):
         self.crazyradioController.sendMessage(message)
 
     def getAllDrones(self) -> List[Drone]:
-        # return list(self.argosController.dronesSet.getDrones().values()) +\
-        #     list(self.crazyradioController.dronesSet.getDrones().values())
-        return []
+        return list(self.argosController.dronesSet.getDrones().values()) +\
+            list(self.crazyradioController.dronesSet.getDrones().values())

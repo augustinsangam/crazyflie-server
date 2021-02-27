@@ -35,20 +35,20 @@ if __name__ == '__main__':
     )
 
     # Crazyradio Controller
-    # crazyradioControllerThread = CrazyradioController().launch()
-    # logging.info('Crazyradio controller launched')
+    crazyradioControllerThread = CrazyradioController().launch()
+    logging.info('Crazyradio controller launched')
 
     # Argos Controller
-    # argosControllerThread = ArgosController().launch()
-    # logging.info('Argos controller launched')
+    argosControllerThread = ArgosController().launch()
+    logging.info('Argos controller launched')
 
     # Dashboard Controller
     dashboardControllerThread = DashboardController().launch()
     logging.info('Dashboard controller launched')
 
     # Wait for the Thread to finish
-    # crazyradioControllerThread.join()
-    # argosControllerThread.join()
+    crazyradioControllerThread.join()
+    argosControllerThread.join()
     dashboardControllerThread.join()
 
     logging.info('All Controllers have stopped')

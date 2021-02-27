@@ -1,6 +1,7 @@
 import logging
 from threading import Thread
 
+from flask_threaded_sockets.websocket import WebSocket
 from models.connection import Connection, HandlerType
 
 
@@ -10,8 +11,8 @@ class DashboardClient:
         self.connection = Connection()
 
     def connect(self, socket) -> None:
-        self.socket = socket
-        self.thread = Thread(target=self.handleCommunications,)
+        self.socket: WebSocket = socket
+        self.thread = Thread(target=self.handleCommunications)
         self.thread.start()
 
     def handleCommunications(self) -> None:
@@ -24,6 +25,7 @@ class DashboardClient:
                 logging.info(f'socket status 3 {self.socket.closed}')
                 self.connection.callAllCallbacks(
                     HandlerType.message, message)
+                self.socket.receive
 
         except Exception as e:
             logging.error(e)

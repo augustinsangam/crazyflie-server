@@ -36,6 +36,7 @@ class DashboardController(metaclass=Singleton):
         client.connection.addCallback(
             HandlerType.error, DashboardController.onClientRaisedError, client=client)
         client.connect(webSocket)
+        client.thread.join()
 
     @app.route('/')
     def hello():
