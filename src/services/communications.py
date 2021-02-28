@@ -1,11 +1,16 @@
 from typing import List
 
-from metaclasses.singleton import Singleton
-from models.drone import Drone
-from models.message import Message
+from src.metaclasses.singleton import Singleton
+from src.models.drone import Drone
+from src.models.message import Message
 
 
 class CommunicationService(metaclass=Singleton):
+
+    def __init__(self):
+        self.dashboardController = None
+        self.argosController = None
+        self.crazyradioController = None
 
     def registerControllers(self, dashboard, argos, crazyradio) -> None:
         self.dashboardController = dashboard

@@ -1,7 +1,6 @@
-import logging
 from collections import defaultdict
 from enum import Enum
-from typing import Callable, Dict, List, TypedDict
+from typing import Callable, Dict, TypedDict, Tuple
 
 
 class HandlerType(Enum):
@@ -13,7 +12,7 @@ class HandlerType(Enum):
 
 class Handler(TypedDict):
     callback: Callable
-    args: List
+    args: Tuple
     kwargs: Dict
 
 
@@ -22,26 +21,26 @@ class Connection:
     def __init__(self) -> None:
         self.handlers = defaultdict(list)
 
-    def addCallback(self, type: HandlerType, callback: Callable, *args, **kwargs) -> None:
-        handler: Handler = {
-            "callback": callback,
-            "args": args,
-            "kwargs": kwargs
-        }
-        self.handlers[type].append(handler)
+    def addCallback(self, handlerType: HandlerType, callback: Callable, *args, **kwargs) -> None:
+        handler = Handler(
+            callback=callback,
+            args=args,
+            kwargs=kwargs
+        )
+        self.handlers[handlerType].append(handler)
 
-    def removeCallback(self, type: HandlerType, callback: Callable) -> None:
-        if type not in self.handlers:
+    def removeCallback(self, handlerType: HandlerType, callback: Callable) -> None:
+        if handlerType not in self.handlers:
             return
 
         def filterFunc(handler: Handler) -> bool:
             return handler['callback'] == callback
 
-        self.handlers[type] = list(filter(filterFunc, self.handler[type]))
+        self.handlers[handlerType] = list(filter(filterFunc, self.handlers[handlerType]))
 
-    def callAllCallbacks(self, type: HandlerType, *args, **kwargs) -> None:
+    def callAllCallbacks(self, handlerType: HandlerType, *args, **kwargs) -> None:
         handler: Handler
-        for handler in self.handlers[type]:
+        for handler in self.handlers[handlerType]:
             callback = handler['callback']
             callbackArgs = (*args, *handler['args'])
             callbackKwargs = {**handler['kwargs'], **kwargs}

@@ -1,15 +1,18 @@
 import socket
 from threading import Thread
 
-from models.connection import Connection, HandlerType
+from flask_threaded_sockets.websocket import WebSocket
+
+from src.models.connection import Connection, HandlerType
 
 
 class ArgosClient:
     def __init__(self) -> None:
+        self.socket = None
         self.connection = Connection()
 
-    def connect(self, socket) -> None:
-        self.socket = socket
+    def connect(self, webSocket: WebSocket) -> None:
+        self.socket = webSocket
         Thread(target=self.handleCommunications).start()
 
     def handleCommunications(self):

@@ -3,9 +3,9 @@ robot-handler.py
 Static class to manage robots and their states
 """
 from copy import copy
-from typing import Any, Dict, Tuple, TypedDict, Union
+from typing import Any, Dict, TypedDict, Union
 
-from models.drone import Drone
+from src.models.drone import Drone
 
 
 class DroneSearchReturn(TypedDict):
@@ -32,10 +32,7 @@ class DronesSet:
         drone: Drone
         for key, drone in self.__drones.items():
             if drone['name'] == name:
-                return {
-                    'key': key,
-                    'drone': drone
-                }
+                return DroneSearchReturn(key=key, drone=drone)
         return None
 
     def setDrone(self, key: Any, drone: Drone) -> None:

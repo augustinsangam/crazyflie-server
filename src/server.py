@@ -3,14 +3,14 @@
 import logging
 import signal
 
-from controllers.argos_controller import ArgosController
-from controllers.crazyradio_controller import CrazyradioController
-from controllers.dashboard_controller import DashboardController
-from services.communications import CommunicationService
-from utils.logging import setupLogging
+from src.controllers.argos_controller import ArgosController
+from src.controllers.crazyradio_controller import CrazyradioController
+from src.controllers.dashboard_controller import DashboardController
+from src.services.communications import CommunicationService
+from src.utils.setup_logging import setupLogging
 
 
-def exitHandler(signal, frame):
+def exitHandler(sig, frame):
     logging.info('Closing server application')
     CrazyradioController.stopServer()
     ArgosController.stopServer()

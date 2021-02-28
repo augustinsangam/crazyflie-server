@@ -8,36 +8,33 @@ from threading import Thread
 from typing import Any, List, Set, Union
 
 import cflib.crtp
-import clients
 from cflib.crtp.radiodriver import RadioManager
-from clients.crazyradio_client import CrazyradioClient
-from metaclasses.singleton import Singleton
-from models.connection import HandlerType
-from models.drone import Drone
-from models.message import Message
-from services.communications import CommunicationService
-from services.drones_set import DronesSet
+from src.clients.crazyradio_client import CrazyradioClient
+from src.metaclasses.singleton import Singleton
+from src.models.connection import HandlerType
+from src.models.drone import Drone
+from src.models.message import Message
+from src.services.communications import CommunicationService
+from src.services.drones_set import DronesSet
 
 
 class CrazyradioController(metaclass=Singleton):
-
     running = True
     dronesSet = DronesSet()
     clients: Set[CrazyradioClient] = set()
 
-    def __init__(self) -> None:
-        cflib.crtp.init_drivers(enable_debug_driver=False)
-        pass
-
-    def launch(self) -> Thread:
-        thread = Thread(target=self.launchServer)
+    @staticmethod
+    def launch() -> Thread:
+        thread = Thread(target=CrazyradioController.launchServer)
         thread.start()
         return thread
 
-    def launchServer(self):
-        while not self.isDongleConnected() and CrazyradioController.running:
+    @staticmethod
+    def launchServer():
+        cflib.crtp.init_drivers(enable_debug_driver=False)
+        while not CrazyradioController.isDongleConnected() and CrazyradioController.running:
             logging.error(
-                'Crazyradio Dongle is not connected. Retrying in 3 secondes.')
+                'Crazyradio Dongle is not connected. Retrying in 3 seconds.')
             time.sleep(3)
 
         if not CrazyradioController.running:
@@ -52,22 +49,24 @@ class CrazyradioController(metaclass=Singleton):
             subprocess.call(['python3', '-m', 'cfloader', 'flash',
                              cf2_bin, 'stm32-fw'])
 
+        interfaces = []
         while CrazyradioController.running:
-            interfaces = self.getAvailableInterfaces()
+            interfaces = CrazyradioController.getAvailableInterfaces()
 
             if len(interfaces) > 0:
                 break
             logging.error(
-                f'No drones found nearby. Retrying in 3 secondes.')
+                f'No drones found nearby. Retrying in 3 seconds.')
             time.sleep(3)
 
         if not CrazyradioController.running:
             return
 
         for interface in interfaces:
-            self.handleClient(interface)
+            CrazyradioController.handleClient(interface)
 
-    def isDongleConnected(self) -> bool:
+    @staticmethod
+    def isDongleConnected() -> bool:
         crazyradioDriver = RadioManager()
         try:
             crazyradioDriver.open(0)
@@ -75,25 +74,32 @@ class CrazyradioController(metaclass=Singleton):
         except:
             return False
 
-    def getAvailableInterfaces(self) -> List:
+    @staticmethod
+    def getAvailableInterfaces() -> List:
         return cflib.crtp.scan_interfaces()
 
+    @staticmethod
     def stopServer():
         CrazyradioController.running = False
         for client in CrazyradioController.clients:
             client.closeClient()
 
-    def handleClient(self, interface):
+    @staticmethod
+    def handleClient(interface):
         client = CrazyradioClient()
         CrazyradioController.clients.add(client)
-        client.connection.addCallback(
-            HandlerType.connection, CrazyradioController.onClientConnect, client=client)
-        client.connection.addCallback(
-            HandlerType.disconnection, CrazyradioController.onClientDisconnect, client=client)
-        client.connection.addCallback(
-            HandlerType.message, CrazyradioController.onClientReceivedMessage, client=client)
-        client.connection.addCallback(
-            HandlerType.error, CrazyradioController.onClientRaisedError, client=client)
+        handlers = [
+            [HandlerType.connection, CrazyradioController.onClientConnect],
+            [HandlerType.disconnection, CrazyradioController.onClientDisconnect],
+            [HandlerType.message, CrazyradioController.onClientReceivedMessage],
+            [HandlerType.error, CrazyradioController.onClientRaisedError],
+        ]
+        for handlerType, handlerFunc in handlers:
+            client.connection.addCallback(
+                handlerType,
+                handlerFunc,
+                client=client
+            )
         uri: str = interface[0]
         client.connect(uri)
 
@@ -120,7 +126,7 @@ class CrazyradioController(metaclass=Singleton):
         droneIdentifier = CrazyradioController.getDroneIdentifier(client.uri)
         try:
             parsedMessage: Message = json.load(StringIO(message))
-        except:
+        except ValueError:
             logging.error(
                 f'Crazyradio client {droneIdentifier} receive a wrong json format : {message}')
         else:
@@ -128,9 +134,10 @@ class CrazyradioController(metaclass=Singleton):
                 f'Crazyradio client {droneIdentifier} received message : {message}')
             if parsedMessage['type'] != 'pulse':
                 return
-            drone: Drone = parsedMessage['data']
+            droneData: dict = parsedMessage['data']
             # Force Crazyradio drone to be real
-            drone = {**drone, "real": True}
+            droneData = {**droneData, "real": True}
+            drone = Drone(**droneData)
             CrazyradioController.dronesSet.setDrone(client.uri, drone)
             CommunicationService().sendToDashboardController(parsedMessage)
 
@@ -157,11 +164,11 @@ class CrazyradioController(metaclass=Singleton):
         CrazyradioController.sendMessageToClient(client, message)
 
     @staticmethod
-    def sendMessageToClient(client, message: Message):
+    def sendMessageToClient(client: CrazyradioClient, message: Message):
         messageStr = json.dumps(message)
         client.sendMessage(messageStr)
 
     @staticmethod
-    def getDroneIdentifier(uri) -> Union[Drone, Any]:
+    def getDroneIdentifier(uri: str) -> Union[Drone, Any]:
         drone: Drone = CrazyradioController.dronesSet.getDrone(uri)
         return drone['name'] if drone else uri

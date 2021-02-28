@@ -4,14 +4,16 @@ from io import StringIO
 from threading import Thread
 from typing import List, Set
 
-from clients.dashboard_client import DashboardClient
+from flask_threaded_sockets.websocket import WebSocket
+
+from src.clients.dashboard_client import DashboardClient
 from flask import Flask
 from flask_threaded_sockets import Sockets, ThreadedWebsocketServer
-from metaclasses.singleton import Singleton
-from models.connection import HandlerType
-from models.drone import Drone
-from models.message import Message
-from services.communications import CommunicationService
+from src.metaclasses.singleton import Singleton
+from src.models.connection import HandlerType
+from src.models.drone import Drone
+from src.models.message import Message
+from src.services.communications import CommunicationService
 
 
 class DashboardController(metaclass=Singleton):
@@ -23,26 +25,8 @@ class DashboardController(metaclass=Singleton):
     webSocketServer = None
     clients: Set[DashboardClient] = set()
 
-    @sockets.route('/dashboard')
-    def handleClient(webSocket):
-        client = DashboardClient()
-        DashboardController.clients.add(client)
-        client.connection.addCallback(
-            HandlerType.connection, DashboardController.onClientConnect, client=client)
-        client.connection.addCallback(
-            HandlerType.disconnection, DashboardController.onClientDisconnect, client=client)
-        client.connection.addCallback(
-            HandlerType.message, DashboardController.onClientReceivedMessage, client=client)
-        client.connection.addCallback(
-            HandlerType.error, DashboardController.onClientRaisedError, client=client)
-        client.connect(webSocket)
-        client.thread.join()
-
-    @app.route('/')
-    def hello():
-        return 'Dashboard Controller'
-
-    def launchServer(self):
+    @staticmethod
+    def launchServer():
         webSocketServer = ThreadedWebsocketServer(
             DashboardController.HOST,
             DashboardController.SERVER_PORT,
@@ -51,15 +35,36 @@ class DashboardController(metaclass=Singleton):
         DashboardController.webSocketServer = webSocketServer
         webSocketServer.serve_forever()
 
-    def launch(self) -> Thread:
-        thread = Thread(target=self.launchServer)
+    @staticmethod
+    def launch() -> Thread:
+        thread = Thread(target=DashboardController.launchServer)
         thread.start()
         return thread
 
+    @staticmethod
     def stopServer():
         for client in DashboardController.clients:
             client.closeClient()
         DashboardController.webSocketServer.shutdown()
+
+    @staticmethod
+    def handleClient(webSocket: WebSocket):
+        client = DashboardClient()
+        DashboardController.clients.add(client)
+        handlers = [
+            [HandlerType.connection, DashboardController.onClientConnect],
+            [HandlerType.disconnection, DashboardController.onClientDisconnect],
+            [HandlerType.message, DashboardController.onClientReceivedMessage],
+            [HandlerType.error, DashboardController.onClientRaisedError],
+        ]
+        for handlerType, handlerFunc in handlers:
+            client.connection.addCallback(
+                handlerType,
+                handlerFunc,
+                client=client
+            )
+        client.connect(webSocket)
+        client.thread.join()
 
     @staticmethod
     def onClientConnect(client: DashboardClient) -> None:
@@ -75,12 +80,11 @@ class DashboardController(metaclass=Singleton):
 
     @staticmethod
     def onClientReceivedMessage(message: str, client: DashboardClient) -> None:
-        logging.info(message)
-        if message == None:
+        if message is None:
             return
         try:
-            parsedMessage = DashboardController.parseMessage(message)
-        except:
+            parsedMessage = json.load(StringIO(message))
+        except ValueError:
             logging.error(
                 f'Dashboard client {client.socket} receive a wrong json format : {message}')
         else:
@@ -97,7 +101,7 @@ class DashboardController(metaclass=Singleton):
     @staticmethod
     def sendAllRobotsStatus(socket) -> None:
         logging.info(
-            'Sending all robots statuts to new Dashboard client')
+            'Sending all robots status to new Dashboard client')
         drones: List[Drone] = CommunicationService().getAllDrones()
         for drone in drones:
             DashboardController.sendMessageToSocket(socket, {
@@ -116,6 +120,12 @@ class DashboardController(metaclass=Singleton):
         socket.send(messageStr)
         pass
 
-    @staticmethod
-    def parseMessage(message: str) -> dict:
-        return json.load(StringIO(message))
+
+@DashboardController.sockets.route('/dashboard')
+def handleNewSocketConnection(webSocket: WebSocket):
+    DashboardController.handleClient(webSocket)
+
+
+@DashboardController.app.route('/')
+def handleNewHttpConnection():
+    return 'Dashboard Controller'
