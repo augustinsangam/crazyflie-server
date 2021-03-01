@@ -13,29 +13,32 @@ class DashboardClient:
         self.connection = Connection()
 
     def connect(self, socket) -> None:
+        """Assing the client to the specified socket and start a thread to handle the communication.
+
+          @param socket: the socket on witch the client is connected.
+        """
         self.socket: WebSocket = socket
-        self.thread = Thread(target=self.handleCommunications)
-        self.thread.start()
+        Thread(target=self.handleCommunications).start()
 
     def handleCommunications(self) -> None:
+        """Listen for message on the socket while the connection is active. 
+
+        """
         self.connection.callAllCallbacks(HandlerType.connection)
-        logging.info(f'socket status 1 {self.socket.closed}')
         try:
             while not self.socket.closed:
-                logging.info(f'socket status 2 {self.socket.closed}')
                 message = self.socket.receive()
-                logging.info(f'socket status 3 {self.socket.closed}')
                 self.connection.callAllCallbacks(
                     HandlerType.message, message)
-                self.socket.receive()
-
         except Exception as e:
             logging.error(e)
             self.socket.close()
             self.connection.callAllCallbacks(HandlerType.error, e)
         finally:
-            pass
             self.connection.callAllCallbacks(HandlerType.disconnection)
 
     def closeClient(self):
+        """Force close the connection. Called by the sigint handler. 
+
+        """
         self.socket.__del__()

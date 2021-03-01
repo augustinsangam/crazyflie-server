@@ -12,6 +12,10 @@ class CrazyradioClient:
         self.connection = Connection()
 
     def connect(self, droneUri: str) -> None:
+        """Assign the client to the connection. Add callbacks for the different events.
+
+          @param droneUri: the drone's identifier.
+        """
         self.uri = droneUri
         self._cf = Crazyflie()
 
@@ -33,7 +37,14 @@ class CrazyradioClient:
         self._cf.open_link(droneUri)
 
     def sendMessage(self, message: str) -> None:
+        """Take given message string and sends it as bytes to the appchannel.
+
+          @param message: the message to send
+        """
         self._cf.appchannel.send_packet(bytes(message, 'ascii'))
 
     def closeClient(self) -> None:
+        """Force close the client connection. Called by the sigint handler
+
+        """
         self._cf.close_link()

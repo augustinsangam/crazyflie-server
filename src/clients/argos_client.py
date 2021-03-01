@@ -12,10 +12,17 @@ class ArgosClient:
         self.connection = Connection()
 
     def connect(self, webSocket: WebSocket) -> None:
+        """Assing the client to the specified websocket and start a thread to handle the communication.
+
+          @param websocket: the socket on witch the client is connected.
+        """
         self.socket = webSocket
         Thread(target=self.handleCommunications).start()
 
     def handleCommunications(self):
+        """Listen on the socket for messages. It closes the client if it receive an empty string.
+
+        """
         self.connection.callAllCallbacks(HandlerType.connection)
         try:
             while True:
@@ -32,4 +39,7 @@ class ArgosClient:
             self.connection.callAllCallbacks(HandlerType.disconnection)
 
     def closeClient(self):
+        """Force close the connection. Called by the sigint handler.
+
+        """
         self.socket.shutdown(socket.SHUT_RDWR)

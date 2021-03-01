@@ -26,7 +26,19 @@ class DashboardController(metaclass=Singleton):
     clients: Set[DashboardClient] = set()
 
     @staticmethod
+    def launch() -> Thread:
+        """Launches a thread in witch the webSocket server will start, and return that thread.
+
+        """
+        thread = Thread(target=DashboardController.launchServer)
+        thread.start()
+        return thread
+
+    @staticmethod
     def launchServer():
+        """Start the websocket server.
+
+        """
         webSocketServer = ThreadedWebsocketServer(
             DashboardController.HOST,
             DashboardController.SERVER_PORT,
@@ -36,19 +48,20 @@ class DashboardController(metaclass=Singleton):
         webSocketServer.serve_forever()
 
     @staticmethod
-    def launch() -> Thread:
-        thread = Thread(target=DashboardController.launchServer)
-        thread.start()
-        return thread
-
-    @staticmethod
     def stopServer():
+        """Closes all the clients connections, then closes the server.
+
+        """
         for client in DashboardController.clients:
             client.closeClient()
         DashboardController.webSocketServer.shutdown()
 
     @staticmethod
     def handleClient(webSocket: WebSocket):
+        """Creates a client witch will listen to the new connection. Callbacks handlers are set for every event.
+
+          @param webSocket: the socket of the new connection.
+        """
         client = DashboardClient()
         DashboardController.clients.add(client)
         handlers = [
@@ -68,18 +81,32 @@ class DashboardController(metaclass=Singleton):
 
     @staticmethod
     def onClientConnect(client: DashboardClient) -> None:
+        """Called by a client when it connects to its socket.
+
+          @param client: the client witch called the function.
+        """
         logging.info(
             f'New Dashboard client connected on socket {client.socket}')
         DashboardController.sendAllRobotsStatus(client.socket)
 
     @staticmethod
     def onClientDisconnect(client: DashboardClient) -> None:
+        """Called by a client when it disconnects from its socket.
+
+          @param client: the client witch called the function.
+        """
         logging.info(
             f'Dashboard client disconnected from socket {client.socket}')
         DashboardController.clients.remove(client)
 
     @staticmethod
-    def onClientReceivedMessage(message: str, client: DashboardClient) -> None:
+    def onClientReceivedMessage(client: DashboardClient, message: str) -> None:
+        """Called by a client when it receives a message. The message is parsed as json, \
+            then sent to all aof the drones (physical and simulated).
+
+          @param client: the client witch called the function.
+          @param message: the message received by the client.
+        """
         if message is None:
             return
         try:
@@ -94,12 +121,21 @@ class DashboardController(metaclass=Singleton):
             CommunicationService().sendToCrazyradioController(parsedMessage)
 
     @staticmethod
-    def onClientRaisedError(error: Exception, client: DashboardClient) -> None:
+    def onClientRaisedError(client: DashboardClient, error: Exception) -> None:
+        """Called when a client raises an error while it waits for messages.
+
+          @param client: the client witch called the function.
+          @param error: the exception  raised by the client.
+        """
         logging.info(
             f'Dashboard client {client.socket} raised an error:\n{error}')
 
     @staticmethod
     def sendAllRobotsStatus(socket) -> None:
+        """Send all the informations of every saved drones to the socket.
+
+          @param socket: the socket to send the info to.
+        """
         logging.info(
             'Sending all robots status to new Dashboard client')
         drones: List[Drone] = CommunicationService().getAllDrones()
@@ -111,11 +147,20 @@ class DashboardController(metaclass=Singleton):
 
     @staticmethod
     def sendMessage(message: Message) -> None:
+        """Send the specified message to all of the clients.
+
+          @param message: the message to send.
+        """
         for client in DashboardController.clients:
             DashboardController.sendMessageToSocket(client.socket, message)
 
     @staticmethod
     def sendMessageToSocket(socket, message: Message) -> None:
+        """Sends the specified message to the specified socket after converting it from json to string.
+
+          @param socket: the socket to send the message.
+          @param message: the message to send.
+        """
         messageStr = json.dumps(message)
         socket.send(messageStr)
         pass

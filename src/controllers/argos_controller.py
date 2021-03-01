@@ -26,12 +26,18 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def launch() -> Thread:
+        """Launches a thread in witch the TCP server will start, and return that thread.
+
+        """
         thread = Thread(target=ArgosController.launchServer)
         thread.start()
         return thread
 
     @staticmethod
     def launchServer():
+        """Start the TCP server in non-blocking mode. Tries to accept new connection as long as the server is running.
+
+        """
         TCPServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         TCPServer.setblocking(False)
         TCPServer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -48,6 +54,9 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def stopServer():
+        """Closes all the clients connections, then closes the server.
+
+        """
         for client in ArgosController.clients:
             client.closeClient()
         ArgosController.running = False
@@ -55,6 +64,10 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def handleClient(clientSocket, addr):
+        """Creates a client witch will listen to the new connection. Callbacks handlers are set for every event.
+
+          @param clientSocket: the socket of the new connection.
+        """
         client = ArgosClient()
         ArgosController.clients.add(client)
         handlers = [
@@ -73,10 +86,19 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def onClientConnect(client: ArgosClient) -> None:
+        """Called by a client when it connects to its socket.
+
+          @param client: the client witch called the function.
+        """
         logging.info(f'New ARGoS client connected on socket {client.socket}')
 
     @staticmethod
     def onClientDisconnect(client: ArgosClient) -> None:
+        """Called by a client when it disconnects from its socket. It send a message to the \
+            dashboards to inform the disconnection only if the server is running.
+
+          @param client: the client witch called the function.
+        """
         logging.info(f'ARGoS client disconnected from socket {client.socket}')
         ArgosController.clients.remove(client)
         if ArgosController.running:
@@ -90,7 +112,13 @@ class ArgosController(metaclass=Singleton):
         ArgosController.dronesSet.removeDrone(client.socket)
 
     @staticmethod
-    def onClientReceivedMessage(message: bytes, client: ArgosClient) -> None:
+    def onClientReceivedMessage(client: ArgosClient, message: bytes) -> None:
+        """Called by a client when it receives a message. The message is first decoded from byte to ascii, then parsed as json.
+        It updates the drone stored status, then sends the message to the dasboards.
+
+          @param client: the client witch called the function.
+          @param message: the message in bytes received by the client.
+        """
         droneIdentifier = ArgosController.getDroneIdentifier(client.socket)
         try:
             messageStr = message.decode('utf-8')
@@ -111,13 +139,22 @@ class ArgosController(metaclass=Singleton):
             CommunicationService().sendToDashboardController(parsedMessage)
 
     @staticmethod
-    def onClientRaisedError(error: Exception, client: ArgosClient) -> None:
+    def onClientRaisedError(client: ArgosClient, error: Exception) -> None:
+        """Called when a client raises an error while it waits for messages.
+
+          @param client: the client witch called the function.
+          @param error: the exception  raised by the client.
+        """
         droneIdentifier = ArgosController.getDroneIdentifier(client.socket)
         logging.info(
             f'ARGoS client {droneIdentifier} raised an error:\n{error}')
 
     @staticmethod
     def sendMessage(message: Message) -> None:
+        """Sends the specified message to the correct drone. doesn't sends anything if the requested drone doesn't exist.
+
+          @param message: the message to send.
+        """
         targetedDroneName = message['data']['name']
         if targetedDroneName == '*':
             for client in ArgosController.clients:
@@ -128,15 +165,24 @@ class ArgosController(metaclass=Singleton):
             targetedDroneName)
         if not droneSearchReturn:
             return
-        webSocket = droneSearchReturn['key']
-        ArgosController.sendMessageToSocket(webSocket, message)
+        socket = droneSearchReturn['key']
+        ArgosController.sendMessageToSocket(socket, message)
 
     @staticmethod
-    def sendMessageToSocket(webSocket, message: Message):
+    def sendMessageToSocket(socket, message: Message):
+        """Sends the specified message to the specified socket after converting it from json to string.
+
+          @param socket: the socket to send the message.
+          @param message: the message to send.
+        """
         messageStr = json.dumps(message)
-        webSocket.send(bytes(messageStr, 'ascii'))
+        socket.send(bytes(messageStr, 'ascii'))
 
     @staticmethod
-    def getDroneIdentifier(webSocket) -> Union[Drone, Any]:
-        drone: Drone = ArgosController.dronesSet.getDrone(webSocket)
-        return drone['name'] if drone else webSocket
+    def getDroneIdentifier(socket) -> Union[Drone, Any]:
+        """Find the drone associated with the specified socket. If the drone name isn't yet registered, the socket is returned.
+
+          @param socket: the socket of the searched drone.
+        """
+        drone: Drone = ArgosController.dronesSet.getDrone(socket)
+        return drone['name'] if drone else socket
