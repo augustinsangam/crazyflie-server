@@ -17,7 +17,6 @@ from src.services.communications import CommunicationService
 
 
 class DashboardController(metaclass=Singleton):
-
     app = Flask(__name__)
     sockets = Sockets(app)
     HOST = '0.0.0.0'
@@ -132,7 +131,7 @@ class DashboardController(metaclass=Singleton):
 
     @staticmethod
     def sendAllRobotsStatus(socket) -> None:
-        """Send all the informations of every saved drones to the socket.
+        """Send all the information of every saved drones to the socket.
 
           @param socket: the socket to send the info to.
         """
@@ -140,10 +139,10 @@ class DashboardController(metaclass=Singleton):
             'Sending all robots status to new Dashboard client')
         drones: List[Drone] = CommunicationService().getAllDrones()
         for drone in drones:
-            DashboardController.sendMessageToSocket(socket, {
-                "type": "pulse",
-                "data": drone
-            })
+            DashboardController.sendMessageToSocket(
+                socket,
+                Message(type="pulse", data=drone)
+            )
 
     @staticmethod
     def sendMessage(message: Message) -> None:

@@ -100,6 +100,7 @@ def exitHandler(signal, frame):
         @param signal: signal parameter description
         @param frame: frame parameter description
     """
+    import logging
     logging.info('CLOSING SERVER APPLICATION')
     pass
 ```

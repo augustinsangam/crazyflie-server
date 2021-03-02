@@ -1,17 +1,22 @@
 import json
 import logging
 import socket
+import time
+
 from io import StringIO
 from threading import Thread
-from typing import Any, Set, Union
+from typing import Any, Set, Union, List
 
 from src.clients.argos_client import ArgosClient
 from src.metaclasses.singleton import Singleton
 from src.models.connection import HandlerType
 from src.models.drone import Drone
 from src.models.message import Message
+from src.models.mission import Vec2
 from src.services.communications import CommunicationService
 from src.services.drones_set import DronesSet
+
+from src.services.mission_handler import MissionHandler
 
 
 class ArgosController(metaclass=Singleton):
@@ -23,6 +28,7 @@ class ArgosController(metaclass=Singleton):
     running = True
     dronesSet = DronesSet()
     clients: Set[ArgosClient] = set()
+    missionHandler: MissionHandler
 
     @staticmethod
     def launch() -> Thread:
@@ -155,6 +161,14 @@ class ArgosController(metaclass=Singleton):
 
           @param message: the message to send.
         """
+        if message['type'] == 'startMission':
+            missionRequestData: dict = message['data']
+            if missionRequestData['type'] == 'fake':
+                ArgosController.startFakeMission()
+            elif missionRequestData['type'] == 'argos':
+                ArgosController.startMission()
+            return
+
         targetedDroneName = message['data']['name']
         if targetedDroneName == '*':
             for client in ArgosController.clients:
@@ -186,3 +200,48 @@ class ArgosController(metaclass=Singleton):
         """
         drone: Drone = ArgosController.dronesSet.getDrone(socket)
         return drone['name'] if drone else socket
+
+    @staticmethod
+    def startFakeMission():
+        fakeDronesSet = DronesSet()
+        fakeDronesSet.setDrone('Drone # 1',
+                               Drone(name='Drone # 1', speed=0, battery=0, position=[0, 0, 0], timestamp=0,
+                                     flying=True, ledOn=True, real=False))
+        fakeDronesSet.setDrone('Drone # 2',
+                               Drone(name='Drone # 2', speed=0, battery=0, position=[0, 0, 0], timestamp=0,
+                                     flying=True, ledOn=True, real=False))
+        ArgosController.missionHandler = MissionHandler(
+            dronesSet=fakeDronesSet,
+            missionType='fake',
+            sendMessageCallable=lambda m: CommunicationService().sendToDashboardController(m)
+        )
+        Thread(target=ArgosController.simulateFakeMission).start()
+
+    @staticmethod
+    def startMission():
+        pass
+
+    @staticmethod
+    def simulateFakeMission():
+        droneName: str
+        position: Vec2
+        points: List[Vec2]
+        frames = [
+            ['Drone # 1', Vec2(x=-1.5, y=-1.5), []],
+            ['Drone # 2', Vec2(x=1.5, y=1.5), []],
+            ['Drone # 1', Vec2(x=-1.5, y=-1), [Vec2(x=-1, y=-1)]],
+            ['Drone # 2', Vec2(x=1.5, y=1), [Vec2(x=1, y=1)]],
+            ['Drone # 1', Vec2(x=-1.5, y=1), [Vec2(x=-1, y=1)]],
+            ['Drone # 2', Vec2(x=1.5, y=-1), [Vec2(x=1, y=-1)]],
+            ['Drone # 1', Vec2(x=-1.5, y=1.5), []],
+            ['Drone # 2', Vec2(x=1.5, y=-1.5), []],
+            ['Drone # 1', Vec2(x=-1, y=1.5), [Vec2(x=-1, y=1)]],
+            ['Drone # 2', Vec2(x=1, y=-1.5), [Vec2(x=1, y=-1)]],
+            ['Drone # 1', Vec2(x=1, y=1.5), [Vec2(x=1, y=1)]],
+            ['Drone # 2', Vec2(x=-1, y=-1.5), [Vec2(x=-1, y=-1)]],
+            ['Drone # 1', Vec2(x=1.5, y=1.5), []],
+            ['Drone # 2', Vec2(x=-1.5, y=-1.5), []],
+        ]
+        for droneName, position, points in frames:
+            time.sleep(0.5)
+            ArgosController.missionHandler.onReceivedPositionAndBorders(droneName, position, points)

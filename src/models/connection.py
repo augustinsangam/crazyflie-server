@@ -42,6 +42,6 @@ class Connection:
         handler: Handler
         for handler in self.handlers[handlerType]:
             callback = handler['callback']
-            callbackArgs = (*args, *handler['args'])
-            callbackKwargs = {**handler['kwargs'], **kwargs}
+            callbackArgs = (*handler['args'], *args)
+            callbackKwargs = {**kwargs, **handler['kwargs']}
             callback(*callbackArgs, **callbackKwargs)
