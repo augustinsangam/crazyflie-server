@@ -1,8 +1,17 @@
 #!/usr/bin/env python3
 
 import logging
+import pathlib
 import signal
+import sys
 
+# Launch server in server/ folder
+sys.path.insert(
+    0, 
+    pathlib.Path(__file__).parent.parent.absolute().__str__()
+)
+
+# Now imports works
 from src.controllers.argos_controller import ArgosController
 from src.controllers.crazyradio_controller import CrazyradioController
 from src.controllers.dashboard_controller import DashboardController
