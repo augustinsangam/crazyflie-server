@@ -229,19 +229,35 @@ class ArgosController(metaclass=Singleton):
         frames = [
             ['Drone # 1', Vec2(x=-1.5, y=-1.5), []],
             ['Drone # 2', Vec2(x=1.5, y=1.5), []],
+
             ['Drone # 1', Vec2(x=-1.5, y=-1), [Vec2(x=-1, y=-1)]],
             ['Drone # 2', Vec2(x=1.5, y=1), [Vec2(x=1, y=1)]],
+
             ['Drone # 1', Vec2(x=-1.5, y=1), [Vec2(x=-1, y=1)]],
             ['Drone # 2', Vec2(x=1.5, y=-1), [Vec2(x=1, y=-1)]],
+
             ['Drone # 1', Vec2(x=-1.5, y=1.5), []],
             ['Drone # 2', Vec2(x=1.5, y=-1.5), []],
+
             ['Drone # 1', Vec2(x=-1, y=1.5), [Vec2(x=-1, y=1)]],
             ['Drone # 2', Vec2(x=1, y=-1.5), [Vec2(x=1, y=-1)]],
+
             ['Drone # 1', Vec2(x=1, y=1.5), [Vec2(x=1, y=1)]],
             ['Drone # 2', Vec2(x=-1, y=-1.5), [Vec2(x=-1, y=-1)]],
+
             ['Drone # 1', Vec2(x=1.5, y=1.5), []],
             ['Drone # 2', Vec2(x=-1.5, y=-1.5), []],
         ]
+
+        i = 0
         for droneName, position, points in frames:
-            time.sleep(0.5)
+            i += 1
+            time.sleep(i % 2)
             ArgosController.missionHandler.onReceivedPositionAndBorders(droneName, position, points)
+
+        ArgosController.missionHandler.onFindShape(
+            [Vec2(x=-1, y=-1), Vec2(x=-1, y=1), Vec2(x=1, y=1), Vec2(x=1, y=-1), Vec2(x=-1, y=-1)])
+
+        time.sleep(2)
+
+        ArgosController.missionHandler.endMission()

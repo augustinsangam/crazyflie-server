@@ -34,9 +34,9 @@ class MissionHandler:
             shapes=[],
             points=[]
         )
-        sendMessageCallable(Message(type='missionPulse', data=self.mission))
+        sendMessageCallable(Message(type='mission', data=self.mission))
 
-    def onReceivedPositionAndBorders(self, droneName: str, position: Vec2, points: List[Vec2], ):
+    def onReceivedPositionAndBorders(self, droneName: str, position: Vec2, points: List[Vec2]):
         newMissionPoints = list(map(lambda point: MissionPoint(droneName=droneName, value=point), points))
         missionPulse = MissionPulse(
             id=self.mission['id'],
@@ -46,4 +46,21 @@ class MissionHandler:
         self.mission['dronesPositions'][droneName] = position
         self.mission['dronesPaths'][droneName].append(position)
         self.mission['points'] = [*self.mission['points'], *newMissionPoints]
+        self.sendMessageCallable(Message(type='missionPulse', data=missionPulse))
+
+    def onFindShape(self, path: List[Vec2]):
+        missionPulse = MissionPulse(
+            id=self.mission['id'],
+            shapes=[path]
+        )
+        self.mission['shapes'].append(path)
+        self.sendMessageCallable(Message(type='missionPulse', data=missionPulse))
+
+    def endMission(self):
+        status: MissionStatus = 'done'
+        missionPulse = MissionPulse(
+            id=self.mission['id'],
+            status=status
+        )
+        self.mission['status'] = status
         self.sendMessageCallable(Message(type='missionPulse', data=missionPulse))
