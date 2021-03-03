@@ -116,7 +116,7 @@ class CrazyradioController(metaclass=Singleton):
             client.connection.addCallback(
                 handlerType,
                 handlerFunc,
-                client=client
+                client
             )
         uri: str = interface[0]
         client.connect(uri)
@@ -190,6 +190,15 @@ class CrazyradioController(metaclass=Singleton):
 
           @param message: the message to send.
         """
+
+        if message['type'] == 'startMission':
+            missionRequestData: dict = message['data']
+            if missionRequestData['type'] == 'fake':
+                pass
+            elif missionRequestData['type'] == 'argos':
+                pass
+            return
+
         uri = message['data']['name']
         if uri == '*':
             for client in CrazyradioController.clients:

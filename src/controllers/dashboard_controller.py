@@ -73,7 +73,7 @@ class DashboardController(metaclass=Singleton):
             client.connection.addCallback(
                 handlerType,
                 handlerFunc,
-                client=client
+                client
             )
         client.connect(webSocket)
         client.thread.join()

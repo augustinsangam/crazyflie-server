@@ -86,7 +86,7 @@ class ArgosController(metaclass=Singleton):
             client.connection.addCallback(
                 handlerType,
                 handlerFunc,
-                client=client
+                client
             )
         client.connect(clientSocket)
 

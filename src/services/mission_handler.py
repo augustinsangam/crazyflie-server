@@ -19,7 +19,7 @@ class MissionHandler:
             return
         self.sendMessageCallable = sendMessageCallable
         missionDrones: MissionDrones = {
-            drone['name']: CSS_PREDEFINED_COLORS[drone['name'].__hash__() % len(CSS_PREDEFINED_COLORS)]
+            drone['name']: (CSS_PREDEFINED_COLORS[drone['name'].__hash__() % len(CSS_PREDEFINED_COLORS)])
             for drone in drones
         }
         timestamp = getTimestamp()
@@ -29,8 +29,8 @@ class MissionHandler:
             type=missionType,
             status='inProgress',
             drones=missionDrones,
-            dronesPositions={},
-            dronesPaths={},
+            dronesPositions={drone['name']: [] for drone in drones},
+            dronesPaths={drone['name']: [] for drone in drones},
             shapes=[],
             points=[]
         )
