@@ -13,12 +13,13 @@ class DashboardClient:
         self.connection = Connection()
 
     def connect(self, socket) -> None:
-        """Assing the client to the specified socket and start a thread to handle the communication.
+        """Assigning the client to the specified socket and start a thread to handle the communication.
 
           @param socket: the socket on witch the client is connected.
         """
         self.socket: WebSocket = socket
-        Thread(target=self.handleCommunications).start()
+        self.thread = Thread(target=self.handleCommunications)
+        self.thread.start()
 
     def handleCommunications(self) -> None:
         """Listen for message on the socket while the connection is active. 
