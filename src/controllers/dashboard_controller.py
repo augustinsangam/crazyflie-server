@@ -5,6 +5,7 @@ from threading import Thread
 from typing import List, Set
 
 from flask_threaded_sockets.websocket import WebSocket
+from services.database import DatabaseService
 
 from src.clients.dashboard_client import DashboardClient
 from flask import Flask
@@ -87,6 +88,7 @@ class DashboardController(metaclass=Singleton):
         logging.info(
             f'New Dashboard client connected on socket {client.socket}')
         DashboardController.sendAllRobotsStatus(client.socket)
+        DashboardController.sendAllMissions(client.socket)
 
     @staticmethod
     def onClientDisconnect(client: DashboardClient) -> None:
@@ -144,6 +146,15 @@ class DashboardController(metaclass=Singleton):
                 Message(type="pulse", data=drone)
             )
 
+    def sendAllMissions(socket) -> None:
+        logging.info('Sending all saved missions to new Dashboard client')
+        missions = DatabaseService.getAllMissions()
+        for mission in missions:
+            DashboardController.sendMessageToSocket(
+                socket,
+                Message(type="mission", data=mission)
+            )
+
     @staticmethod
     def sendMessage(message: Message) -> None:
         """Send the specified message to all of the clients.
@@ -162,7 +173,6 @@ class DashboardController(metaclass=Singleton):
         """
         messageStr = json.dumps(message)
         socket.send(messageStr)
-        pass
 
 
 @DashboardController.sockets.route('/dashboard')

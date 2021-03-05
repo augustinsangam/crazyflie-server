@@ -8,7 +8,7 @@ from src.models.mission import Mission
 
 class DatabaseService(metaclass=Singleton):
     MISSIONS_TABLE_NAME = 'missions'
-    db = TinyDB('database/db.json')
+    db = TinyDB('data/db.json')
 
     @staticmethod
     def getAllMissions() -> List[Mission]:
