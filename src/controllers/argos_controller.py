@@ -2,10 +2,9 @@ import json
 import logging
 import socket
 import time
-
 from io import StringIO
 from threading import Thread
-from typing import Any, Set, Union, List
+from typing import Any, List, Set, Union
 
 from src.clients.argos_client import ArgosClient
 from src.metaclasses.singleton import Singleton
@@ -15,7 +14,6 @@ from src.models.message import Message
 from src.models.mission import Vec2
 from src.services.communications import CommunicationService
 from src.services.drones_set import DronesSet
-
 from src.services.mission_handler import MissionHandler
 
 
@@ -223,37 +221,36 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def simulateFakeMission():
-        dronesFeed = open('./utils/fake_mission/droneFeed.txt', 'r')
+        jsonDronesFeed = {}
+        with open('./src/utils/fake_mission/droneFeed.json', 'r') as f:
+            jsonDronesFeed = json.load(f)
+            droneName: str
+            position: Vec2
+            points: List[Vec2]
 
-        jsonDronesFeed = json.load(StringIO(dronesFeed.readline()))
+            frames = []
 
-        droneName: str
-        position: Vec2
-        points: List[Vec2]
+            for feed in jsonDronesFeed['frames']:
+                frame = [
+                    feed[0],
+                    Vec2(x=feed[1][0], y=feed[1][1]),
+                    [Vec2(x=feed[2][0][0], y=feed[2][0][1]),
+                     Vec2(x=feed[2][1][0], y=feed[2][1][1]),
+                     Vec2(x=feed[2][2][0], y=feed[2][2][1]),
+                     Vec2(x=feed[2][3][0], y=feed[2][3][1])]
+                ]
+                frames.append(frame)
 
-        frames = []
+            i = 0
+            for droneName, position, points in frames:
+                i += 1
+                time.sleep(i % 2)
+                ArgosController.missionHandler.onReceivedPositionAndBorders(
+                    droneName, position, points)
 
-        for feed in jsonDronesFeed['frames']:
-            frame = [
-                feed[0],
-                Vec2(x=feed[1][0], y=feed[1][1]),
-                [Vec2(x=feed[2][0][0], y=feed[2][0][1]),
-                 Vec2(x=feed[2][1][0], y=feed[2][1][1]),
-                 Vec2(x=feed[2][2][0], y=feed[2][2][1]),
-                 Vec2(x=feed[2][3][0], y=feed[2][3][1])]
-            ]
-            frames.append(frame)
+            ArgosController.missionHandler.onFindShape(
+                [Vec2(x=-1, y=-1), Vec2(x=-1, y=1), Vec2(x=1, y=1), Vec2(x=1, y=-1), Vec2(x=-1, y=-1)])
 
-        i = 0
-        for droneName, position, points in frames:
-            i += 1
-            time.sleep(i % 2)
-            ArgosController.missionHandler.onReceivedPositionAndBorders(
-                droneName, position, points)
+            time.sleep(2)
 
-        ArgosController.missionHandler.onFindShape(
-            [Vec2(x=-1, y=-1), Vec2(x=-1, y=1), Vec2(x=1, y=1), Vec2(x=1, y=-1), Vec2(x=-1, y=-1)])
-
-        time.sleep(2)
-
-        ArgosController.missionHandler.endMission()
+            ArgosController.missionHandler.endMission()

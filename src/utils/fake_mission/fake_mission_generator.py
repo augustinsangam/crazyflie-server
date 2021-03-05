@@ -1,5 +1,6 @@
-from io import StringIO
 import json
+import pathlib
+from io import StringIO
 from typing import List, Tuple, TypedDict
 
 
@@ -58,55 +59,59 @@ def missionPulse(mission: List, droneName: str, pos: Vec2) -> str:
 
 if __name__ == '__main__':
 
-    missionFile = open('fake_mission.txt', 'rt')
+    fakeMissionFilePath = pathlib.Path(__file__).parent.joinpath(
+        'fake_mission.json').absolute().__str__()
 
-    droneFeedFile = open('droneFeed.json', 'wt')
+    droneFeedFilePath = pathlib.Path(__file__).parent.joinpath(
+        'droneFeed.json').absolute().__str__()
 
-    jsonMission = json.load(StringIO(missionFile.readline()))
+    with open(fakeMissionFilePath, 'r') as f:
+        jsonMission = json.load(f)
 
-    dronesPos = {}
-    dronesLastPos = {}
+        droneFeedFile = open(droneFeedFilePath, 'wt')
 
-    for i in range(jsonMission['nb_drone']):
-        droneName = f'Drone#{i+1}'
-        dronesPos[droneName] = Vec2(
-            y=jsonMission[droneName][0], x=jsonMission[droneName][1])
+        dronesPos = {}
+        dronesLastPos = {}
 
-        dronesLastPos[droneName] = Vec2(
-            y=jsonMission[droneName][0], x=jsonMission[droneName][1])
+        for i in range(jsonMission['nb_drone']):
+            droneName = f'Drone#{i+1}'
+            dronesPos[droneName] = Vec2(
+                y=jsonMission[droneName][0], x=jsonMission[droneName][1])
 
-    stop = False
+            dronesLastPos[droneName] = Vec2(
+                y=jsonMission[droneName][0], x=jsonMission[droneName][1])
 
-    droneFrames = '{"frames":['
+        stop = False
 
-    stoppedDrones = []
+        droneFrames = '{"frames":['
 
-    while len(stoppedDrones) < jsonMission['nb_drone']:
-        for drone in dronesPos:
-            if stoppedDrones.__contains__(drone):
-                continue
+        stoppedDrones = []
 
-            pulse = missionPulse(
-                jsonMission['mission'], drone, dronesPos[drone])
+        while len(stoppedDrones) < jsonMission['nb_drone']:
+            for drone in dronesPos:
+                if stoppedDrones.__contains__(drone):
+                    continue
 
-            droneFrames += pulse
+                pulse = missionPulse(
+                    jsonMission['mission'], drone, dronesPos[drone])
 
-            tempPos = dronesPos[drone]
+                droneFrames += pulse
 
-            stop, dronesPos[drone] = findNextMove(
-                jsonMission['mission'], dronesPos[drone], dronesLastPos[drone])
+                tempPos = dronesPos[drone]
 
-            dronesLastPos[drone] = tempPos
+                stop, dronesPos[drone] = findNextMove(
+                    jsonMission['mission'], dronesPos[drone], dronesLastPos[drone])
 
-            if stop:
-                stoppedDrones.append(drone)
+                dronesLastPos[drone] = tempPos
 
-            if len(stoppedDrones) < jsonMission['nb_drone']:
-                droneFrames += ','
+                if stop:
+                    stoppedDrones.append(drone)
 
-    droneFrames += '}'
+                if len(stoppedDrones) < jsonMission['nb_drone']:
+                    droneFrames += ','
 
-    droneFeedFile.write(droneFrames)
+        droneFrames += ']}'
 
-    droneFeedFile.close()
-    missionFile.close()
+        droneFeedFile.write(droneFrames)
+
+        droneFeedFile.close()
