@@ -1,46 +1,112 @@
 from io import StringIO
 import json
-from typing import List, Tuple
+from typing import List, Tuple, TypedDict
 
 
-def findNextMove(mission: List, pos: Tuple, lastTravel: Tuple) -> Tuple:
-    if mission[pos[0]+1][pos[1]] == '*' and (pos[0]+1, pos[1]) != lastTravel:
-        return (True, pos[0]+1, pos[1])
-    if mission[pos[0]-1][pos[1]] == '*' and (pos[0]-1, pos[1]) != lastTravel:
-        return (True, pos[0]-1, pos[1])
-    if mission[pos[0]][pos[1]+1] == '*' and (pos[0], pos[1]+1) != lastTravel:
-        return (True, pos[0], pos[1]+1)
-    if mission[pos[0]][pos[1]-1] == '*' and (pos[0], pos[1]-1) != lastTravel:
-        return (True, pos[0], pos[1]-1)
+class Vec2(TypedDict):
+    x: float
+    y: float
+
+
+def findNextMove(mission: List, pos: Vec2, lastPos: Vec2) -> Tuple:
+    if mission[int(pos['y']+1)][int(pos['x'])] == '*' and Vec2(y=pos['y']+1, x=pos['x']) != lastPos:
+        return False, Vec2(y=pos['y']+1, x=pos['x'])
+    elif mission[int(pos['y']-1)][int(pos['x'])] == '*' and Vec2(y=pos['y']-1, x=pos['x']) != lastPos:
+        return False, Vec2(y=pos['y']-1, x=pos['x'])
+    elif mission[int(pos['y'])][int(pos['x']+1)] == '*' and Vec2(y=pos['y'], x=pos['x']+1) != lastPos:
+        return False, Vec2(y=pos['y'], x=pos['x']+1)
+    elif mission[int(pos['y'])][int(pos['x']-1)] == '*' and Vec2(y=pos['y'], x=pos['x']-1) != lastPos:
+        return False, Vec2(y=pos['y'], x=pos['x']-1)
     else:
-        return (False, 0, 0)
+        return True, Vec2(x=0, y=0)
 
 
-def rayCast(pos: Tuple, drone: str):
+def rayCast(mission: List, pos: Vec2, direction: Tuple) -> Vec2:
+    y = pos['y']
+    x = pos['x']
+    for i in range(20):
+        if mission[int(y)][int(x)] == '.':
+            return Vec2(x=x, y=y)
+        x += direction[1]
+        y += direction[0]
+    return Vec2(x=x, y=y)
 
-    pass
+
+def scalePoints(points: List) -> List:
+    scaledPoints = []
+    for j in range(len(points)):
+        scaledPoints.append((points[j]['x']-10.0)/5)
+        scaledPoints.append((points[j]['y']-10.0)/5)
+    return scaledPoints
 
 
-def missionPulse(drone: str, pos: Tuple) -> bool:
+def missionPulse(mission: List, droneName: str, pos: Vec2) -> str:
+    points = [pos]
+    # north
+    points.append(rayCast(mission, pos, (-1, 0)))
+    # east
+    points.append(rayCast(mission, pos, (0, 1)))
+    # south
+    points.append(rayCast(mission, pos, (1, 0)))
+    # west
+    points.append(rayCast(mission, pos, (0, -1)))
 
-    pass
+    scaledPoints = scalePoints(points)
+
+    return f'[\"{droneName}\",[{scaledPoints[0]},{scaledPoints[1]}],[[{scaledPoints[2]},{scaledPoints[3]}],[{scaledPoints[4]},{scaledPoints[5]}],[{scaledPoints[6]},{scaledPoints[7]}],[{scaledPoints[8]},{scaledPoints[9]}]]]'
 
 
 if __name__ == '__main__':
 
-    missionFile = open('filename.txt', 'r')
+    missionFile = open('fake_mission.txt', 'rt')
 
-    droneFeedFile = open('droneFeed.txt', 'w')
+    droneFeedFile = open('droneFeed.json', 'wt')
 
     jsonMission = json.load(StringIO(missionFile.readline()))
 
     dronesPos = {}
+    dronesLastPos = {}
 
-    for i in jsonMission['nb_drone']:
-        dronesPos[f'Drone#{i+1}'] = jsonMission[f'Drone#{i+1}']
+    for i in range(jsonMission['nb_drone']):
+        droneName = f'Drone#{i+1}'
+        dronesPos[droneName] = Vec2(
+            y=jsonMission[droneName][0], x=jsonMission[droneName][1])
+
+        dronesLastPos[droneName] = Vec2(
+            y=jsonMission[droneName][0], x=jsonMission[droneName][1])
 
     stop = False
 
-    while not stop:
+    droneFrames = '{"frames":['
+
+    stoppedDrones = []
+
+    while len(stoppedDrones) < jsonMission['nb_drone']:
         for drone in dronesPos:
-            stop = missionPulse()
+            if stoppedDrones.__contains__(drone):
+                continue
+
+            pulse = missionPulse(
+                jsonMission['mission'], drone, dronesPos[drone])
+
+            droneFrames += pulse
+
+            tempPos = dronesPos[drone]
+
+            stop, dronesPos[drone] = findNextMove(
+                jsonMission['mission'], dronesPos[drone], dronesLastPos[drone])
+
+            dronesLastPos[drone] = tempPos
+
+            if stop:
+                stoppedDrones.append(drone)
+
+            if len(stoppedDrones) < jsonMission['nb_drone']:
+                droneFrames += ','
+
+    droneFrames += '}'
+
+    droneFeedFile.write(droneFrames)
+
+    droneFeedFile.close()
+    missionFile.close()

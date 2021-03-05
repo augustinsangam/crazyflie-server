@@ -205,10 +205,10 @@ class ArgosController(metaclass=Singleton):
     def startFakeMission():
         fakeDronesSet = DronesSet()
         fakeDronesSet.setDrone('Drone # 1',
-                               Drone(name='Drone # 1', speed=0, battery=0, position=[0, 0, 0], timestamp=0,
+                               Drone(name='Drone#1', speed=0, battery=0, position=[0, 0, 0], timestamp=0,
                                      flying=True, ledOn=True, real=False))
         fakeDronesSet.setDrone('Drone # 2',
-                               Drone(name='Drone # 2', speed=0, battery=0, position=[0, 0, 0], timestamp=0,
+                               Drone(name='Drone#2', speed=0, battery=0, position=[0, 0, 0], timestamp=0,
                                      flying=True, ledOn=True, real=False))
         ArgosController.missionHandler = MissionHandler(
             dronesSet=fakeDronesSet,
@@ -223,37 +223,33 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def simulateFakeMission():
+        dronesFeed = open('./utils/fake_mission/droneFeed.txt', 'r')
+
+        jsonDronesFeed = json.load(StringIO(dronesFeed.readline()))
+
         droneName: str
         position: Vec2
         points: List[Vec2]
-        frames = [
-            ['Drone # 1', Vec2(x=-1.5, y=-1.5), []],
-            ['Drone # 2', Vec2(x=1.5, y=1.5), []],
 
-            ['Drone # 1', Vec2(x=-1.5, y=-1), [Vec2(x=-1, y=-1)]],
-            ['Drone # 2', Vec2(x=1.5, y=1), [Vec2(x=1, y=1)]],
+        frames = []
 
-            ['Drone # 1', Vec2(x=-1.5, y=1), [Vec2(x=-1, y=1)]],
-            ['Drone # 2', Vec2(x=1.5, y=-1), [Vec2(x=1, y=-1)]],
-
-            ['Drone # 1', Vec2(x=-1.5, y=1.5), []],
-            ['Drone # 2', Vec2(x=1.5, y=-1.5), []],
-
-            ['Drone # 1', Vec2(x=-1, y=1.5), [Vec2(x=-1, y=1)]],
-            ['Drone # 2', Vec2(x=1, y=-1.5), [Vec2(x=1, y=-1)]],
-
-            ['Drone # 1', Vec2(x=1, y=1.5), [Vec2(x=1, y=1)]],
-            ['Drone # 2', Vec2(x=-1, y=-1.5), [Vec2(x=-1, y=-1)]],
-
-            ['Drone # 1', Vec2(x=1.5, y=1.5), []],
-            ['Drone # 2', Vec2(x=-1.5, y=-1.5), []],
-        ]
+        for feed in jsonDronesFeed['frames']:
+            frame = [
+                feed[0],
+                Vec2(x=feed[1][0], y=feed[1][1]),
+                [Vec2(x=feed[2][0][0], y=feed[2][0][1]),
+                 Vec2(x=feed[2][1][0], y=feed[2][1][1]),
+                 Vec2(x=feed[2][2][0], y=feed[2][2][1]),
+                 Vec2(x=feed[2][3][0], y=feed[2][3][1])]
+            ]
+            frames.append(frame)
 
         i = 0
         for droneName, position, points in frames:
             i += 1
             time.sleep(i % 2)
-            ArgosController.missionHandler.onReceivedPositionAndBorders(droneName, position, points)
+            ArgosController.missionHandler.onReceivedPositionAndBorders(
+                droneName, position, points)
 
         ArgosController.missionHandler.onFindShape(
             [Vec2(x=-1, y=-1), Vec2(x=-1, y=1), Vec2(x=1, y=1), Vec2(x=1, y=-1), Vec2(x=-1, y=-1)])
