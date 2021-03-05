@@ -249,8 +249,39 @@ class ArgosController(metaclass=Singleton):
                     droneName, position, points)
 
             ArgosController.missionHandler.onFindShape(
-                [Vec2(x=-1, y=-1), Vec2(x=-1, y=1), Vec2(x=1, y=1), Vec2(x=1, y=-1), Vec2(x=-1, y=-1)])
+                [Vec2(x=-1.8, y=0.4), Vec2(x=-0.8, y=0.4), Vec2(x=-0.8, y=0.6), Vec2(x=-1.8, y=0.6), Vec2(x=-1.8, y=0.4)])
+            time.sleep(1)
 
-            time.sleep(2)
+            ArgosController.missionHandler.onFindShape(
+                [Vec2(x=-0.8, y=-1.8), Vec2(x=-0.8, y=-0.8), Vec2(x=-0.6, y=-0.8), Vec2(x=-0.6, y=-1.8), Vec2(x=-0.8, y=-1.8)])
+            time.sleep(1)
+
+            ArgosController.missionHandler.onFindShape(
+                [Vec2(x=0.2, y=1.8), Vec2(x=0.2, y=0.6), Vec2(x=0.6, y=0.6), Vec2(x=0.6, y=1.8), Vec2(x=0.2, y=1.8)])
+            time.sleep(1)
+
+            ArgosController.missionHandler.onFindShape(
+                [Vec2(x=0.2, y=-1), Vec2(x=0.2, y=-1.2), Vec2(x=0.8, y=-1.2), Vec2(x=0.8, y=-1)])
+            time.sleep(1)
+
+            ArgosController.missionHandler.onFindShape(
+                [Vec2(x=0.8, y=2), Vec2(x=2, y=2), Vec2(x=2, y=-2), Vec2(x=-0.4, y=-2)])
+            time.sleep(1)
+
+            ArgosController.missionHandler.onFindShape(
+                [Vec2(x=-2, y=-1.8), Vec2(x=-2, y=0.2)])
+            time.sleep(1)
+
+            ArgosController.missionHandler.onFindShape(
+                [Vec2(x=-1, y=-2), Vec2(x=-1.8, y=-2)])
+            time.sleep(1)
+
+            ArgosController.missionHandler.onFindShape(
+                [Vec2(x=-2, y=0.8), Vec2(x=-2, y=1.8)])
+            time.sleep(1)
+
+            ArgosController.missionHandler.onFindShape(
+                [Vec2(x=-1.8, y=2), Vec2(x=0, y=2)])
+            time.sleep(1)
 
             ArgosController.missionHandler.endMission()
