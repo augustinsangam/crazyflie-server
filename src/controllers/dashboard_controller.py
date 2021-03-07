@@ -4,12 +4,11 @@ from io import StringIO
 from threading import Thread
 from typing import List, Set
 
-from flask_threaded_sockets.websocket import WebSocket
-from services.database import DatabaseService
-
-from src.clients.dashboard_client import DashboardClient
 from flask import Flask
 from flask_threaded_sockets import Sockets, ThreadedWebsocketServer
+from flask_threaded_sockets.websocket import WebSocket
+from services.database import DatabaseService
+from src.clients.dashboard_client import DashboardClient
 from src.metaclasses.singleton import Singleton
 from src.models.connection import HandlerType
 from src.models.drone import Drone
@@ -147,8 +146,8 @@ class DashboardController(metaclass=Singleton):
             )
 
     def sendAllMissions(socket) -> None:
-        logging.info('Sending all saved missions to new Dashboard client')
         missions = DatabaseService.getAllMissions()
+        logging.info(f'Sending all saved missions ({len(missions)} in total) to new Dashboard client')
         for mission in missions:
             DashboardController.sendMessageToSocket(
                 socket,

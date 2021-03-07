@@ -1,9 +1,8 @@
 from typing import List
 
 from src.metaclasses.singleton import Singleton
-from tinydb import TinyDB, Query
-
 from src.models.mission import Mission
+from tinydb import Query, TinyDB
 
 
 class DatabaseService(metaclass=Singleton):
@@ -13,7 +12,8 @@ class DatabaseService(metaclass=Singleton):
     @staticmethod
     def getAllMissions() -> List[Mission]:
         table = DatabaseService.db.table(DatabaseService.MISSIONS_TABLE_NAME)
-        return table.all()
+        allMissions: List[Mission] = table.all()
+        return sorted(allMissions, key=lambda m: m['timestamp'], reverse=True)
 
     @staticmethod
     def saveMission(missionId: str, mission: Mission):
