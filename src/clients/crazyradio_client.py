@@ -1,3 +1,5 @@
+import struct
+
 from typing import Union
 
 from cflib.crazyflie import Crazyflie
@@ -36,12 +38,14 @@ class CrazyradioClient:
 
         self._cf.open_link(droneUri)
 
-    def sendMessage(self, message: str) -> None:
+    def sendMessage(self, data) -> None:
         """Take given message string and sends it as bytes to the appchannel.
 
           @param message: the message to send
         """
-        self._cf.appchannel.send_packet(bytes(message, 'ascii'))
+        # self._cf.appchannel.send_packet(bytes(message, 'ascii'))
+        # TODO test the following line
+        self._cf.appchannel.send_packet(struct.pack("<Qfffff??", data))
 
     def closeClient(self) -> None:
         """Force close the client connection. Called by the sigint handler

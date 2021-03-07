@@ -2,6 +2,7 @@ import json
 import logging
 import subprocess
 import time
+import struct
 from io import StringIO
 from os import getenv
 from threading import Thread
@@ -149,7 +150,7 @@ class CrazyradioController(metaclass=Singleton):
         CrazyradioController.dronesSet.removeDrone(client.uri)
 
     @staticmethod
-    def onClientReceivedMessage(client: CrazyradioClient, message: str) -> None:
+    def onClientReceivedMessage(client: CrazyradioClient, data) -> None:
         """Called by a client when it receives a message. The message parsed as json.
         It updates the drone stored status, then sends the message to the dasboards.
 
@@ -158,21 +159,33 @@ class CrazyradioController(metaclass=Singleton):
         """
         droneIdentifier = CrazyradioController.getDroneIdentifier(client.uri)
         try:
-            parsedMessage: Message = json.load(StringIO(message))
+            message = struct.unpack("<Qfffff??", data)
+            drone = Drone()
+            drone['timestamp'] = message[0]
+            drone['speed'] = message[1]
+            drone['battery'] = message[2]
+            drone['position'] = [message[3], message[4], message[5]]
+            drone['flying'] = message[6]
+            drone['ledOn'] = message[7]
+            drone['real'] = True
+            CrazyradioController.dronesSet.setDrone(client.uri, drone)
+
+            # parsedMessage: Message = json.load(StringIO(message))
         except ValueError:
             logging.error(
                 f'Crazyradio client {droneIdentifier} receive a wrong json format : {message}')
         else:
             logging.info(
                 f'Crazyradio client {droneIdentifier} received message : {message}')
-            if parsedMessage['type'] != 'pulse':
-                return
-            droneData: dict = parsedMessage['data']
+            # if parsedMessage['type'] != 'pulse':
+            # return
+            # droneData: dict = parsedMessage['data']
             # Force Crazyradio drone to be real
-            droneData = {**droneData, "real": True}
-            drone = Drone(**droneData)
+            # droneData = {**droneData, "real": True}
+            # drone = Drone(**droneData)
             CrazyradioController.dronesSet.setDrone(client.uri, drone)
-            CommunicationService().sendToDashboardController(parsedMessage)
+            CommunicationService().sendToDashboardController(
+                '\{\"type\":"pulse","data":' + drone + '}')
 
     @staticmethod
     def onClientRaisedError(client: CrazyradioClient, error: Exception) -> None:
