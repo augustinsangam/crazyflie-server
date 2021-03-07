@@ -217,7 +217,17 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def startMission():
-        pass
+        ArgosController.sendMessage('{"type":"startMission","data":{"name":"*"}}')
+        if ArgosController.missionHandler != None:
+            ArgosController.missionHandler.endMission()
+
+        ArgosController.missionHandler = MissionHandler(
+            dronesSet=ArgosController.dronesSet,
+            missionType='argos',
+            sendMessageCallable=lambda m: CommunicationService().sendToDashboardController(m)
+        )
+    
+
 
     @staticmethod
     def simulateFakeMission():

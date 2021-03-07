@@ -63,7 +63,7 @@ class CrazyradioController(metaclass=Singleton):
 
             if len(interfaces) > 0:
                 break
-            logging.error(
+            logging.warn(
                 f'No drones found nearby. Retrying in 3 seconds.')
             time.sleep(3)
 
