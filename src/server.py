@@ -4,6 +4,7 @@ import logging
 import pathlib
 import signal
 import sys
+from models.mission import MissionPulse
 
 # Launch server in server/ folder
 sys.path.insert(
@@ -17,7 +18,7 @@ from src.controllers.crazyradio_controller import CrazyradioController
 from src.controllers.dashboard_controller import DashboardController
 from src.services.communications import CommunicationService
 from src.utils.setup_logging import setupLogging
-
+from services.database import DatabaseService
 
 def exitHandler(sig, frame):
     logging.info('Closing server application')
@@ -33,8 +34,8 @@ if __name__ == '__main__':
 
     # Handle terminations
     signal.signal(signal.SIGINT, exitHandler)
-    # signal.signal(signal.SIGTERM, exitHandler)
-    # signal.signal(signal.SIGHUP, exitHandler)
+    signal.signal(signal.SIGTERM, exitHandler)
+    signal.signal(signal.SIGHUP, exitHandler)
 
     # Register all controllers
     CommunicationService().registerControllers(
@@ -42,6 +43,17 @@ if __name__ == '__main__':
         ArgosController,
         CrazyradioController
     )
+
+    # Terminate any in progress missions
+    missions = DatabaseService.getAllMissions()
+    
+    for mission in missions:
+        if mission['status'] == 'inProgress':
+            missionPulse = MissionPulse(
+                id=mission['id'],
+                status='failed'
+            )
+            DatabaseService.saveMission(missionPulse['id'], missionPulse)
 
     # Crazyradio Controller
     crazyradioControllerThread = CrazyradioController().launch()
