@@ -1,5 +1,6 @@
 import json
 import logging
+import pathlib
 import socket
 import time
 from io import StringIO
@@ -237,7 +238,7 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def simulateFakeMission():
-        with open('./src/utils/fake_mission/droneFeed.json', 'r') as f:
+        with open('data/droneFeed.json', 'r') as f:
             jsonDronesFeed = json.load(f)
             droneName: str
             position: Vec2
