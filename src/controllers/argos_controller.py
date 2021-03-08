@@ -26,7 +26,7 @@ class ArgosController(metaclass=Singleton):
     running = True
     dronesSet = DronesSet()
     clients: Set[ArgosClient] = set()
-    missionHandler: MissionHandler
+    missionHandler: MissionHandler = None
 
     @staticmethod
     def launch() -> Thread:
@@ -222,7 +222,7 @@ class ArgosController(metaclass=Singleton):
     def startMission():
         ArgosController.sendMessage(
             Message(
-                type='startMission',
+                type='takeOff',
                 data={"name": "*"}
             )
         )
