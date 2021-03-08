@@ -88,7 +88,7 @@ class CrazyradioController(metaclass=Singleton):
 
     @staticmethod
     def getAvailableInterfaces() -> List:
-        # TODO revoir l'utilite
+        # TODO : Is it useful
         return cflib.crtp.scan_interfaces()
 
     @staticmethod
@@ -139,8 +139,8 @@ class CrazyradioController(metaclass=Singleton):
           @param client: the client witch called the function.
         """
         logging.info(f'Crazyradio client disconnected from uri {client.uri}')
-        CrazyradioController.clients.remove(client)
         if CrazyradioController.running:
+            CrazyradioController.clients.remove(client)
             drone: Drone = CrazyradioController.dronesSet.getDrone(client.uri)
             CommunicationService().sendToDashboardController(
                 Message(
@@ -183,7 +183,7 @@ class CrazyradioController(metaclass=Singleton):
             logging.error(
                 f'Crazyradio client {droneIdentifier} receive a wrong struct format : {data}')
         else:
-            logging.info(
+            logging.debug(
                 f'Crazyradio client {droneIdentifier} received message : {message}')
             # if parsedMessage['type'] != 'pulse':
             # return

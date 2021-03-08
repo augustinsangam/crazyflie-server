@@ -115,7 +115,7 @@ class DashboardController(metaclass=Singleton):
             logging.error(
                 f'Dashboard client {client.socket} receive a wrong json format : {message}')
         else:
-            logging.info(
+            logging.debug(
                 f'Dashboard client {client.socket} received message : {message}')
             CommunicationService().sendToArgosController(parsedMessage)
             CommunicationService().sendToCrazyradioController(parsedMessage)

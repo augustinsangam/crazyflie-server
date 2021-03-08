@@ -53,6 +53,7 @@ class ArgosController(metaclass=Singleton):
             try:
                 clientSocket, addr = TCPServer.accept()
                 ArgosController.handleClient(clientSocket, addr)
+                time.sleep(1)
             except:
                 pass
 
@@ -113,7 +114,7 @@ class ArgosController(metaclass=Singleton):
                     data={"name": drone['name']}
                 )
             )
-        ArgosController.dronesSet.removeDrone(client.socket)
+            ArgosController.dronesSet.removeDrone(client.socket)
 
     @staticmethod
     def onClientReceivedMessage(client: ArgosClient, message: bytes) -> None:
@@ -131,7 +132,7 @@ class ArgosController(metaclass=Singleton):
             logging.error(
                 f'ARGoS client {droneIdentifier} receive a wrong json format : {message}')
         else:
-            logging.info(
+            logging.debug(
                 f'ARGoS client {droneIdentifier} received message : {messageStr}')
             if parsedMessage['type'] != 'pulse':
                 return
