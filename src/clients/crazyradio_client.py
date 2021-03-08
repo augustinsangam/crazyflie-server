@@ -1,9 +1,13 @@
+import json
+import logging
 import struct
 
 from typing import Union
+from io import StringIO
 
 from cflib.crazyflie import Crazyflie
 from src.models.connection import Connection, HandlerType
+from src.models.message import Message
 
 
 class CrazyradioClient:
@@ -34,18 +38,23 @@ class CrazyradioClient:
             lambda uri, msg: self.connection.callAllCallbacks(HandlerType.error, msg))
 
         self._cf.appchannel.packet_received.add_callback(
-            lambda uri, data: self.connection.callAllCallbacks(HandlerType.error, data))
+            lambda data: self.connection.callAllCallbacks(HandlerType.message, data))
 
         self._cf.open_link(droneUri)
 
-    def sendMessage(self, data) -> None:
+    def sendMessage(self, message: Message) -> None:
         """Take given message string and sends it as bytes to the appchannel.
 
           @param message: the message to send
         """
-        # self._cf.appchannel.send_packet(bytes(message, 'ascii'))
-        # TODO test the following line
-        self._cf.appchannel.send_packet(struct.pack("<Qfffff??", data))
+        if message['data']['name'] == self.uri or message['data']['name'] == '*':
+            if message['type'] == 'lighten':
+                self._cf.appchannel.send_packet(struct.pack("<?", True))
+            elif message['type'] == 'darken':
+                self._cf.appchannel.send_packet(struct.pack("<?", False))
+            else:
+                logging.error(
+                    f'Crazyradio got unrecognized command to send : {message}')
 
     def closeClient(self) -> None:
         """Force close the client connection. Called by the sigint handler

@@ -7,7 +7,7 @@ from typing import List, Set
 from flask import Flask
 from flask_threaded_sockets import Sockets, ThreadedWebsocketServer
 from flask_threaded_sockets.websocket import WebSocket
-from services.database import DatabaseService
+from src.services.database import DatabaseService
 from src.clients.dashboard_client import DashboardClient
 from src.metaclasses.singleton import Singleton
 from src.models.connection import HandlerType
