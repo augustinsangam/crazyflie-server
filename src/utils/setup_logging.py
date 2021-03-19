@@ -6,6 +6,8 @@ coloredlogs.install()
 
 
 def setupLogging() -> None:
+    """Set the format of the logging tool.
+    """
     logging.getLogger('cflib.crtp').setLevel(logging.ERROR)
     logging.getLogger('flib.drivers.cfusb').setLevel(logging.ERROR)
     logging.getLogger('cflib.crazyflie').setLevel(logging.ERROR)
