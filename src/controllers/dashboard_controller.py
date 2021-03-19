@@ -7,7 +7,7 @@ from typing import List, Set
 from flask import Flask
 from flask_threaded_sockets import Sockets, ThreadedWebsocketServer
 from flask_threaded_sockets.websocket import WebSocket
-from services.database import DatabaseService
+from src.services.database import DatabaseService
 from src.clients.dashboard_client import DashboardClient
 from src.metaclasses.singleton import Singleton
 from src.models.connection import HandlerType
@@ -115,7 +115,7 @@ class DashboardController(metaclass=Singleton):
             logging.error(
                 f'Dashboard client {client.socket} receive a wrong json format : {message}')
         else:
-            logging.info(
+            logging.debug(
                 f'Dashboard client {client.socket} received message : {message}')
             CommunicationService().sendToArgosController(parsedMessage)
             CommunicationService().sendToCrazyradioController(parsedMessage)
