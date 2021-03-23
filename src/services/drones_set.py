@@ -53,5 +53,8 @@ class DronesSet:
         self.__drones[key] = drone
 
     def removeDrone(self, key: Any) -> None:
+        """Revome the drone associatede with the given key.
+          @param key: the key that identifies the drone to remove.
+        """
         if key in self.__drones:
             del self.__drones[key]

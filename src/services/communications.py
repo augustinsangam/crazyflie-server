@@ -26,14 +26,25 @@ class CommunicationService(metaclass=Singleton):
         self.crazyradioController = crazyradio
 
     def sendToDashboardController(self, message: Message):
+        """Send the message to the dashboard controller.
+          @param message: the message to send.
+        """
         self.dashboardController.sendMessage(message)
 
     def sendToArgosController(self, message: Message):
-        self.argosController.sendMessage(message)
+        """Send the message to the argos controller.
+          @param message: the message to send.
+        """
+        self.argosController.onControllerReceivedMessage(message)
 
     def sendToCrazyradioController(self, message: Message):
-        self.crazyradioController.sendMessage(message)
+        """Send the message to the crazyradio controller.
+          @param message: the message to send.
+        """
+        self.crazyradioController.onControllerReceivedMessage(message)
 
     def getAllDrones(self) -> List[Drone]:
+        """Get all the drone saved acros the argos and crazyradio controller.
+        """
         return list(self.argosController.dronesSet.getDrones().values()) +\
             list(self.crazyradioController.dronesSet.getDrones().values())

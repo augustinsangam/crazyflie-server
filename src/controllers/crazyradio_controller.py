@@ -210,12 +210,10 @@ class CrazyradioController(metaclass=Singleton):
             f'ARGoS Crazyradio connected on uri {client.uri} raised an error:\n{error}')
 
     @staticmethod
-    def sendMessage(message: Message) -> None:
-        """Sends the specified message to the correct drone. doesn't sends anything if the requested drone doesn't exist.
-
-          @param message: the message to send.
+    def onControllerReceivedMessage(message: Message):
+        """Decide what to do with the given message. It can start a mission or send the message as is to the clients.
+          @param message: the message received.
         """
-
         if message['type'] == 'startMission':
             missionRequestData: dict = message['data']
             if missionRequestData['type'] == 'fake':
@@ -223,6 +221,15 @@ class CrazyradioController(metaclass=Singleton):
             elif missionRequestData['type'] == 'argos':
                 pass
             return
+
+        CrazyradioController.sendMessage(message)
+
+    @staticmethod
+    def sendMessage(message: Message) -> None:
+        """Sends the specified message to the correct drone. doesn't sends anything if the requested drone doesn't exist.
+
+          @param message: the message to send.
+        """
 
         uri = message['data']['name']
         if uri == '*':

@@ -163,10 +163,9 @@ class ArgosController(metaclass=Singleton):
             f'ARGoS client raised an error:\n{error}')
 
     @staticmethod
-    def sendMessage(message: Message) -> None:
-        """Sends the specified message to the client. Start a mission if the message type is 'startMission'.
-
-          @param message: the message to send.
+    def onControllerReceivedMessage(message: Message):
+        """Decide what to do with the given message. It can start a mission or send the message as is to the clients.
+          @param message: the message received.
         """
         if message['type'] == 'startMission':
             missionRequestData: dict = message['data']
@@ -175,12 +174,20 @@ class ArgosController(metaclass=Singleton):
             elif missionRequestData['type'] == 'argos':
                 ArgosController.startMission()
             return
+        ArgosController.sendMessage(message)
+
+    @staticmethod
+    def sendMessage(message: Message) -> None:
+        """Sends the specified message to the client. Start a mission if the message type is 'startMission'.
+
+          @param message: the message to send.
+        """
 
         # targetedDroneName = message['data']['name']
         # if targetedDroneName == '*':
-            # for client in ArgosController.clients:
-            #     ArgosController.sendMessageToSocket(client.socket, message)
-            # return
+        # for client in ArgosController.clients:
+        #     ArgosController.sendMessageToSocket(client.socket, message)
+        # return
 
         # droneSearchReturn = ArgosController.dronesSet.findDroneByName(
         #     targetedDroneName)
