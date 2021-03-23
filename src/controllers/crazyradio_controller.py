@@ -10,6 +10,7 @@ from typing import Any, List, Set, Union
 
 import cflib.crtp
 from cflib.crtp.radiodriver import RadioManager
+from services.mission_handler import MissionHandler
 from src.clients.crazyradio_client import CrazyradioClient
 from src.metaclasses.singleton import Singleton
 from src.models.connection import HandlerType
@@ -24,6 +25,7 @@ class CrazyradioController(metaclass=Singleton):
     running = True
     dronesSet = DronesSet()
     clients: Set[CrazyradioClient] = set()
+    missionHandler: MissionHandler
 
     @staticmethod
     def launch() -> Thread:
@@ -163,8 +165,8 @@ class CrazyradioController(metaclass=Singleton):
         droneIdentifier = CrazyradioController.getDroneIdentifier(client.uri)
         try:
 
-            message = struct.unpack("<HHHHHff??", data)
-            front, left, back, right, up, speed, battery, flying, ledOn = message
+            message = struct.unpack("<HHHHHfff??", data)
+            front, left, back, right, up, orientation, speed, battery, flying, ledOn = message
             drone = Drone(
                 battery=battery,
                 flying=flying,
@@ -174,6 +176,7 @@ class CrazyradioController(metaclass=Singleton):
                 ledOn=ledOn,
                 real=True,
                 name=client.uri,
+                orientation=orientation,
                 multiRange=[front, left, back, right, up],
             )
             CrazyradioController.dronesSet.setDrone(client.uri, drone)
@@ -192,6 +195,8 @@ class CrazyradioController(metaclass=Singleton):
             # droneData = {**droneData, "real": True}
             # drone = Drone(**droneData)
             CrazyradioController.dronesSet.setDrone(client.uri, drone)
+            CrazyradioController.missionHandler.onReceivedPositionAndRange(
+                drone['name'], drone['position'], drone['multiRange'].remove(drone['multiRange'][4]))
             CommunicationService().sendToDashboardController(
                 Message(
                     type="pulse",
@@ -216,10 +221,8 @@ class CrazyradioController(metaclass=Singleton):
         """
         if message['type'] == 'startMission':
             missionRequestData: dict = message['data']
-            if missionRequestData['type'] == 'fake':
-                pass
-            elif missionRequestData['type'] == 'argos':
-                pass
+            if missionRequestData['type'] == 'crazyradio':
+                CrazyradioController.startMission()
             return
 
         CrazyradioController.sendMessage(message)
@@ -263,3 +266,36 @@ class CrazyradioController(metaclass=Singleton):
         """
         drone: Drone = CrazyradioController.dronesSet.getDrone(uri)
         return drone['name'] if drone else uri
+
+    @staticmethod
+    def startMission():
+        """Start a mission. Order drones to takeoff and initialize a mission handler.
+
+        """
+        CrazyradioController.sendMessage(
+            Message(
+                type='startMission',
+                data={"name": "*"}
+            )
+        )
+        if CrazyradioController.missionHandler is not None:
+            CrazyradioController.missionHandler.endMission()
+
+        CrazyradioController.missionHandler = MissionHandler(
+            dronesSet=CrazyradioController.dronesSet,
+            missionType='crazyradio',
+            sendMessageCallable=lambda m: CommunicationService().sendToDashboardController(m)
+        )
+
+    @staticmethod
+    def stopMission():
+        CrazyradioController.sendMessage(
+            Message(
+                type='stopMission',
+                data={"name": "*"}
+            )
+        )
+        if CrazyradioController.missionHandler is not None:
+            CrazyradioController.missionHandler.endMission()
+
+        CrazyradioController.missionHandler.endMission()

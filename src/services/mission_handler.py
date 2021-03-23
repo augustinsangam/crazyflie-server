@@ -60,12 +60,13 @@ class MissionHandler:
           @param ranges: the list of ranges (front, left, back, right)
         """
         points: List[Vec2] = []
+        i = 0
         for range in ranges:
             point = Vec2(
                 x=range * self.RANGE_SCALE *
-                math.cos(orientation) + position['x'],
+                math.cos(orientation + i * math.pi / 4) + position['x'],
                 y=range * self.RANGE_SCALE *
-                math.sin(orientation) + position['y']
+                math.sin(orientation + i * math.pi / 4) + position['y']
             )
             points.append(point)
 
