@@ -1,3 +1,4 @@
+import math
 from typing import List, Callable
 from services.database import DatabaseService
 
@@ -11,6 +12,9 @@ from src.utils.timestamp import getTimestamp
 
 
 class MissionHandler:
+
+    RANGE_SCALE: float = 1.0
+    MAX_DISTANCE = 0.21
 
     def __init__(self, dronesSet: DronesSet, missionType: MissionType, sendMessageCallable: Callable[[Message], None]):
         drones: List[Drone] = list(dronesSet.getDrones().values())
@@ -40,7 +44,21 @@ class MissionHandler:
         DatabaseService.saveMission(self.mission['id'], self.mission)
         sendMessageCallable(Message(type='mission', data=self.mission))
 
-    def onReceivedPositionAndBorders(self, droneName: str, position: Vec2, points: List[Vec2]):
+    def onReceivedPositionAndRange(self, droneName: str, position: Vec2, orientation: float, ranges: List[int]):
+        points: List[Vec2] = []
+        for range in ranges:
+            point = Vec2(
+                x=range * self.RANGE_SCALE *
+                math.cos(orientation) + position['x'],
+                y=range * self.RANGE_SCALE *
+                math.sin(orientation) + position['y']
+            )
+            points.append(point)
+
+        self.handlePositionAndBorders(
+            self, droneName, position, points)
+
+    def handlePositionAndBorders(self, droneName: str, position: Vec2, points: List[Vec2]):
         newMissionPoints = list(map(lambda point: MissionPoint(
             droneName=droneName, value=point), points))
         missionPulse = MissionPulse(
@@ -65,11 +83,47 @@ class MissionHandler:
         self.sendMessageCallable(
             Message(type='missionPulse', data=missionPulse))
 
+    def assingPointsToShapes(self):
+        pointsCopy = self.mission['points'].copy()
+
+        while len(pointsCopy):
+            shape = []
+            self.recusrsiveAddPointToShape(pointsCopy, [pointsCopy[0]], shape)
+            shape.append(shape[0])
+            self.mission['shapes'].append(shape)
+
+    def recusrsiveAddPointToShape(self, missionPoints: List[MissionPoint], pointsToAdd: List[MissionPoint], currentShape: List[Vec2]):
+        for point in pointsToAdd:
+            currentShape.append(point['value'])
+
+            nexPointsToAdd = {}
+            pointsToRemove = []
+            for missionPoint in missionPoints:
+                dist = math.dist([missionPoint['value']['x'], missionPoint['value']['y']], [
+                    point['value']['x'], point['value']['y']])
+                if dist == 0.0:
+                    pointsToRemove.append(missionPoint)
+                elif dist <= self.MAX_DISTANCE:
+                    nexPointsToAdd[dist] = missionPoint
+            for point in list(nexPointsToAdd.values()):
+                missionPoints.remove(point)
+            for point in pointsToRemove:
+                missionPoints.remove(point)
+
+            nexPointsToAdd = dict(
+                sorted(nexPointsToAdd.items(), key=lambda i: i[0]))
+
+            if len(nexPointsToAdd):
+                self.recusrsiveAddPointToShape(
+                    missionPoints, list(nexPointsToAdd.values()), currentShape)
+
     def endMission(self):
+        self.assingPointsToShapes()
         status: MissionStatus = 'done'
         missionPulse = MissionPulse(
             id=self.mission['id'],
-            status=status
+            status=status,
+            shapes=self.mission['shapes']
         )
         self.mission['status'] = status
         DatabaseService.saveMission(self.mission['id'], self.mission)

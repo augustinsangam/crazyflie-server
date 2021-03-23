@@ -205,10 +205,10 @@ class ArgosController(metaclass=Singleton):
         """Find the drone associated with the specified socket. If the drone name isn't yet registered, the socket is returned.
         NOT USED ANYMORE
 
-          @param clientSocket: the socket of the searched drone.
+          @param socket: the socket of the searched drone.
         """
-        drone: Drone = ArgosController.dronesSet.getDrone(clientSocket)
-        return drone['name'] if drone else clientSocket
+        drone: Drone = ArgosController.dronesSet.getDrone(socket)
+        return drone['name'] if drone else socket
 
     @staticmethod
     def startFakeMission():
@@ -252,7 +252,6 @@ class ArgosController(metaclass=Singleton):
     @staticmethod
     def simulateFakeMission():
         """Start a fake mission using the droneFeed file to simulate flying drones. For demo purposes only.
-        Send fixed shapes for proof of concept.
         """
         with open('data/droneFeed.json', 'r') as f:
             jsonDronesFeed = json.load(f)
@@ -277,45 +276,7 @@ class ArgosController(metaclass=Singleton):
             for droneName, position, points in frames:
                 i += 1
                 time.sleep((i % 2) / 5)
-                ArgosController.missionHandler.onReceivedPositionAndBorders(
+                ArgosController.missionHandler.handlePositionAndBorders(
                     droneName, position, points)
-
-            ArgosController.missionHandler.onFindShape(
-                [Vec2(x=-1.8, y=0.4), Vec2(x=-0.8, y=0.4), Vec2(x=-0.8, y=0.6), Vec2(x=-1.8, y=0.6),
-                 Vec2(x=-1.8, y=0.4)])
-            time.sleep(1)
-
-            ArgosController.missionHandler.onFindShape(
-                [Vec2(x=-0.8, y=-1.8), Vec2(x=-0.8, y=-0.8), Vec2(x=-0.6, y=-0.8), Vec2(x=-0.6, y=-1.8),
-                 Vec2(x=-0.8, y=-1.8)])
-            time.sleep(1)
-
-            ArgosController.missionHandler.onFindShape(
-                [Vec2(x=0.2, y=1.8), Vec2(x=0.2, y=0.6), Vec2(x=0.6, y=0.6), Vec2(x=0.6, y=1.8), Vec2(x=0.2, y=1.8)])
-            time.sleep(1)
-
-            ArgosController.missionHandler.onFindShape(
-                [Vec2(x=0.2, y=-1), Vec2(x=0.2, y=-1.2), Vec2(x=0.8, y=-1.2), Vec2(x=0.8, y=-1)])
-            time.sleep(1)
-
-            ArgosController.missionHandler.onFindShape(
-                [Vec2(x=0.8, y=2), Vec2(x=2, y=2), Vec2(x=2, y=-2), Vec2(x=-0.4, y=-2)])
-            time.sleep(1)
-
-            ArgosController.missionHandler.onFindShape(
-                [Vec2(x=-2, y=-1.8), Vec2(x=-2, y=0.2)])
-            time.sleep(1)
-
-            ArgosController.missionHandler.onFindShape(
-                [Vec2(x=-1, y=-2), Vec2(x=-1.8, y=-2)])
-            time.sleep(1)
-
-            ArgosController.missionHandler.onFindShape(
-                [Vec2(x=-2, y=0.8), Vec2(x=-2, y=1.8)])
-            time.sleep(1)
-
-            ArgosController.missionHandler.onFindShape(
-                [Vec2(x=-1.8, y=2), Vec2(x=0, y=2)])
-            time.sleep(1)
 
             ArgosController.missionHandler.endMission()
