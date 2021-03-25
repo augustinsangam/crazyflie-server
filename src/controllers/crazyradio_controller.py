@@ -89,7 +89,7 @@ class CrazyradioController(metaclass=Singleton):
     @staticmethod
     def getAvailableInterfaces() -> List:
         # TODO : Is it useful
-        return cflib.crtp.scan_interfaces()
+        return cflib.crtp.scan_interfaces(0xE7E7E7E702)
 
     @staticmethod
     def stopServer():
