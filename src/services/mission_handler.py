@@ -1,3 +1,4 @@
+import logging
 import math
 from typing import List, Callable
 from services.database import DatabaseService
@@ -13,7 +14,7 @@ from src.utils.timestamp import getTimestamp
 
 class MissionHandler:
 
-    RANGE_SCALE: float = 1.0
+    RANGE_SCALE: float = 0.01
     MAX_DISTANCE = 0.21
 
     def __init__(self, dronesSet: DronesSet, missionType: MissionType, sendMessageCallable: Callable[[Message], None]):
@@ -27,6 +28,7 @@ class MissionHandler:
         """
         drones: List[Drone] = list(dronesSet.getDrones().values())
         if len(drones) == 0:
+            logging.info("Mission rejected: no drones")
             status: MissionStatus = 'rejected'
             sendMessageCallable(
                 Message(type='missionPulse', data={'status': status}))
@@ -61,17 +63,19 @@ class MissionHandler:
         """
         points: List[Vec2] = []
         i = 0
-        for range in ranges:
+        for r in ranges:
+            if r > 65530:
+                continue
             point = Vec2(
-                x=range * self.RANGE_SCALE *
-                math.cos(orientation + i * math.pi / 4) + position['x'],
-                y=range * self.RANGE_SCALE *
-                math.sin(orientation + i * math.pi / 4) + position['y']
+                x=r * self.RANGE_SCALE *
+                math.cos(orientation + i * math.pi / 2) + position['x'],
+                y=r * self.RANGE_SCALE *
+                math.sin(orientation + i * math.pi / 2) + position['y']
             )
             points.append(point)
-
+            i+=1
         self.handlePositionAndBorders(
-            self, droneName, position, points)
+            droneName, position, points)
 
     def handlePositionAndBorders(self, droneName: str, position: Vec2, points: List[Vec2]):
         """Add the new position of the drone as well as the position of the border it found to the mission.

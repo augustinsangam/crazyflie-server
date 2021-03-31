@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import pathlib
 import socket
 import time
@@ -136,8 +137,9 @@ class ArgosController(metaclass=Singleton):
             messageStr = message.decode('utf-8')
             parsedMessage: Message = json.load(StringIO(messageStr))
         except ValueError:
-            logging.error(
-                f'ARGoS client received a wrong json format : {message}')
+            # logging.error(
+            #     f'ARGoS client received a wrong json format : {message}')
+            pass
         else:
             logging.info(
                 f'ARGoS client received message : {messageStr}')
@@ -147,10 +149,15 @@ class ArgosController(metaclass=Singleton):
             droneData: dict = {**droneData, "real": False}
             # Force ARGoS drone not to be real
             drone = Drone(**droneData)
-            print(f'\nDrone on recieve message: {drone}\n')
+            # print(f'\nDrone on recieve message: {drone}\n')
             ArgosController.dronesSet.setDrone(drone['name'], drone)
             CommunicationService().sendToDashboardController(parsedMessage)
-
+            
+            try:
+                ArgosController.missionHandler.onReceivedPositionAndRange(drone['name'], Vec2(x=drone['position'][0], y=drone['position'][1]), math.pi/4, drone['ranges'])
+            except:
+                pass
+    
     @staticmethod
     def onClientRaisedError(client: ArgosClient, error: Exception) -> None:
         """Called when a client raises an error while it waits for messages.
@@ -241,15 +248,16 @@ class ArgosController(metaclass=Singleton):
         """Start a mission. Order drones to takeoff and initialize a mission handler.
 
         """
-        ArgosController.sendMessage(
-            Message(
-                type='takeOff',
-                data={"name": "*"}
+        logging.info("\n START MISSION \n")
+        for drone in ArgosController.dronesSet.getDrones():
+            ArgosController.sendMessage(
+                Message(
+                    type='startMission',
+                    data={"name": drone}
+                )
             )
-        )
-        if ArgosController.missionHandler is not None:
-            ArgosController.missionHandler.endMission()
-
+        # if ArgosController.missionHandler is not None:
+        #     ArgosController.missionHandler.endMission()
         ArgosController.missionHandler = MissionHandler(
             dronesSet=ArgosController.dronesSet,
             missionType='argos',

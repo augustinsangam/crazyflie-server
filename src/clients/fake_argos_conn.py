@@ -13,7 +13,7 @@ while True:
         print(
             'Sending: {"type":"pulse","data":{"name":"fake_drone_' + str(num) + '","timestamp": ' + str(num) + ',"speed": ' + str(num) + ',"battery": ' + str(num) + ',"position": [' + str(num) + ', ' + str(num) + ', ' + str(num) + '],"flying": false,"ledOn": false,"real": false}}')
         client.send(bytes(
-            '{"type":"pulse","data":{"name":"fake_drone_' + str(num) + '","timestamp": ' + str(num) + ',"speed": ' + str(num) + ',"battery": ' + str(num) + ',"position": [' + str(num) + ', ' + str(num) + ', ' + str(num) + '],"flying": false,"ledOn": false,"real": false}}', 'ascii'))
+            '{"type":"pulse","data":{"name":"fake_drone_' + str(num) + '","timestamp": ' + str(num) + ',"speed": ' + str(num) + ',"battery": ' + str(num) + ',"position": [' + str(num) + ', ' + str(num) + ', ' + str(num) + '],"orientation": 0.785,"ranges": [127,127,127,127],"flying": false,"ledOn": false,"real": false}}', 'ascii'))
         print('Sent')
     elif inp == '2':
         print('Waiting for message:')
