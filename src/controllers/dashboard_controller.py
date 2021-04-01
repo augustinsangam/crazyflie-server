@@ -7,13 +7,14 @@ from typing import List, Set
 from flask import Flask
 from flask_threaded_sockets import Sockets, ThreadedWebsocketServer
 from flask_threaded_sockets.websocket import WebSocket
-from src.services.database import DatabaseService
+
 from src.clients.dashboard_client import DashboardClient
 from src.metaclasses.singleton import Singleton
 from src.models.connection import HandlerType
 from src.models.drone import Drone
 from src.models.message import Message
 from src.services.communications import CommunicationService
+from src.services.database import DatabaseService
 
 
 class DashboardController(metaclass=Singleton):
@@ -26,7 +27,8 @@ class DashboardController(metaclass=Singleton):
 
     @staticmethod
     def launch() -> Thread:
-        """Launches a thread in witch the webSocket server will start, and return that thread.
+        """Launches a thread in witch the webSocket server will start,
+        and return that thread.
 
         """
         thread = Thread(target=DashboardController.launchServer)
@@ -57,7 +59,8 @@ class DashboardController(metaclass=Singleton):
 
     @staticmethod
     def handleClient(webSocket: WebSocket):
-        """Creates a client witch will listen to the new connection. Callbacks handlers are set for every event.
+        """Creates a client witch will listen to the new connection.
+        Callbacks handlers are set for every event.
 
           @param webSocket: the socket of the new connection.
         """
@@ -101,8 +104,9 @@ class DashboardController(metaclass=Singleton):
 
     @staticmethod
     def onClientReceivedMessage(client: DashboardClient, message: str) -> None:
-        """Called by a client when it receives a message. The message is parsed as json, \
-            then sent to all aof the drones (physical and simulated).
+        """Called by a client when it receives a message. The message is
+        parsed as json, then sent to all aof the drones (physical and
+        simulated).
 
           @param client: the client witch called the function.
           @param message: the message received by the client.
@@ -113,7 +117,8 @@ class DashboardController(metaclass=Singleton):
             parsedMessage = json.load(StringIO(message))
         except ValueError:
             logging.error(
-                f'Dashboard client {client.socket} receive a wrong json format : {message}')
+                f'Dashboard client {client.socket} receive a wrong json '
+                f'format : {message}')
         else:
             logging.debug(
                 f'Dashboard client {client.socket} received message : {message}')
@@ -145,9 +150,12 @@ class DashboardController(metaclass=Singleton):
                 Message(type="pulse", data=drone)
             )
 
+    @staticmethod
     def sendAllMissions(socket) -> None:
         missions = DatabaseService.getAllMissions()
-        logging.info(f'Sending all saved missions ({len(missions)} in total) to new Dashboard client')
+        logging.info(
+            f'Sending all saved missions ({len(missions)} in total) to new '
+            f'Dashboard client')
         for mission in missions:
             DashboardController.sendMessageToSocket(
                 socket,
@@ -155,17 +163,15 @@ class DashboardController(metaclass=Singleton):
             )
 
     @staticmethod
-    def sendMessage(message: Message) -> None:
-        """Send the specified message to all of the clients.
-
-          @param message: the message to send.
-        """
+    def onControllerReceivedMessage(message: Message):
+        """TODO"""
         for client in DashboardController.clients:
             DashboardController.sendMessageToSocket(client.socket, message)
 
     @staticmethod
     def sendMessageToSocket(socket, message: Message) -> None:
-        """Sends the specified message to the specified socket after converting it from json to string.
+        """Sends the specified message to the specified socket after
+        converting it from json to string.
 
           @param socket: the socket to send the message.
           @param message: the message to send.

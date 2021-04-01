@@ -18,7 +18,8 @@ class CrazyradioClient:
         self.connection = Connection()
 
     def connect(self, droneUri: str) -> None:
-        """Assign the client to the connection. Add callbacks for the different events.
+        """Assign the client to the connection. Add callbacks for the
+        different events.
 
           @param droneUri: the drone's identifier.
         """

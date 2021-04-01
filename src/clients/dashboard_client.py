@@ -13,7 +13,8 @@ class DashboardClient:
         self.connection = Connection()
 
     def connect(self, socket) -> None:
-        """Assigning the client to the specified socket and start a thread to handle the communication.
+        """Assigning the client to the specified socket and start a thread to
+        handle the communication.
 
           @param socket: the socket on witch the client is connected.
         """
@@ -22,7 +23,7 @@ class DashboardClient:
         self.thread.start()
 
     def handleCommunications(self) -> None:
-        """Listen for message on the socket while the connection is active. 
+        """Listen for message on the socket while the connection is active.
 
         """
         self.connection.callAllCallbacks(HandlerType.connection)
@@ -39,7 +40,7 @@ class DashboardClient:
             self.connection.callAllCallbacks(HandlerType.disconnection)
 
     def closeClient(self):
-        """Force close the connection. Called by the sigint handler. 
+        """Force close the connection. Called by the sigint handler.
 
         """
         self.socket.__del__()
