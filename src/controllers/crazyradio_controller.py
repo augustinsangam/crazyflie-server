@@ -3,7 +3,6 @@ import struct
 import subprocess
 import threading
 import time
-from os import getenv
 from threading import Thread
 from typing import Any, List, Set, Union
 
@@ -11,7 +10,8 @@ import cflib.crtp
 from cflib.crtp.radiodriver import RadioManager
 
 from src.models.mission import Vec2
-from src.models.software_update import LoadProjectData, ProjectType
+from src.models.software_update import LoadProjectData, ProjectType, LogType, \
+    LoadProjectLog
 from src.services.mission_handler import MissionHandler
 from src.clients.crazyradio_client import CrazyradioClient
 from src.metaclasses.singleton import Singleton
@@ -29,6 +29,8 @@ class CrazyradioController(metaclass=Singleton):
     clients: Set[CrazyradioClient] = set()
     missionHandler: MissionHandler
     projectCurrentlyLoading = False
+    FIRST_DRONE_ADDRESS = 0xE7E7E7E701
+    MAX_DRONE_NUMBER = 2
 
     @staticmethod
     def launch() -> Thread:
@@ -57,14 +59,6 @@ class CrazyradioController(metaclass=Singleton):
             return
 
         logging.info(f"Successfully connected to Crazyradio Dongle")
-
-        cf2_bin = getenv('CF2_BIN')
-        if cf2_bin:
-            logging.critical(
-                f'Flashing drone using the cfloader. Ensure yourself to have '
-                f'drones in Bootloader mode')
-            subprocess.call(['python3', '-m', 'cfloader', 'flash',
-                             cf2_bin, 'stm32-fw'])
 
         interfaces = []
         while CrazyradioController.running:
@@ -96,8 +90,19 @@ class CrazyradioController(metaclass=Singleton):
 
     @staticmethod
     def getAvailableInterfaces() -> List:
-        # TODO : Is it useful
-        return cflib.crtp.scan_interfaces()
+        """
+        TODO
+        """
+        available = []
+        first = CrazyradioController.FIRST_DRONE_ADDRESS
+        last = CrazyradioController.FIRST_DRONE_ADDRESS + CrazyradioController.MAX_DRONE_NUMBER
+
+        for address in range(first, last):
+            available = [
+                *available,
+                *cflib.crtp.scan_interfaces(address)
+            ]
+        return available
 
     @staticmethod
     def stopServer():
@@ -321,9 +326,28 @@ class CrazyradioController(metaclass=Singleton):
         CrazyradioController.missionHandler.endMission()
 
     @staticmethod
+    def cloadAll(uris: List[str], cf2_bin: str):
+        for uri in uris:
+            logMessage = f'Flashing drone at uri {uri}'
+            logging.critical(logMessage)
+            CrazyradioController.sendLogToDashboard('info', logMessage)
+            subprocess.call(['python3', '-m', 'cfloader', 'flash',
+                             cf2_bin, 'stm32-fw', '-w', uri])
+
+    @staticmethod
+    def sendLogToDashboard(logType: LogType, log: str):
+        message = Message(
+            type='loadProjectLog',
+            data=LoadProjectLog(
+                log=log,
+                type=logType
+            )
+        )
+        CommunicationService().sendToDashboardController(message)
+
+    @staticmethod
     def loadProject(loadProjectData: LoadProjectData):
         if CrazyradioController.projectCurrentlyLoading:
-            pass
             return
 
         CrazyradioController.projectCurrentlyLoading = True
@@ -333,7 +357,7 @@ class CrazyradioController(metaclass=Singleton):
         if 'code' in loadProjectData:
             code = loadProjectData['code']
 
-        t = threading.Thread(target=CrazyradioController,
+        t = threading.Thread(target=CrazyradioController.loadProjectThread,
                              args=(projectType, code))
         t.start()
 
