@@ -33,7 +33,8 @@ class DronesSet:
         return None
 
     def findDroneByName(self, name: str) -> Union[None, DroneSearchReturn]:
-        """Search the saved drone with the given name. Return None if it doesn't find any match.
+        """Search the saved drone with the given name. Return None if it
+        doesn't find any match.
 
           @param name: the str name of the searched drone.
         """

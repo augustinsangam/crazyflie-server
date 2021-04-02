@@ -1,12 +1,12 @@
 import logging
 import math
 from typing import List, Callable
-from services.database import DatabaseService
+from src.services.database import DatabaseService
 
 from src.models.drone import Drone
 from src.models.message import Message
-from src.models.mission import MissionType, MissionStatus, Mission, Vec2, MissionPulse, \
-    MissionPoint, MissionDrones
+from src.models.mission import MissionType, MissionStatus, Mission, Vec2, \
+    MissionPulse, MissionPoint, MissionDrones
 from src.services.drones_set import DronesSet
 from src.utils.css_predifined_colors import CSS_PREDEFINED_COLORS
 from src.utils.timestamp import getTimestamp
@@ -16,14 +16,16 @@ class MissionHandler:
     RANGE_SCALE: float = 0.01
     MAX_DISTANCE = 0.21
 
-    def __init__(self, dronesSet: DronesSet, missionType: MissionType, sendMessageCallable: Callable[[Message], None]):
-        """Initialyze the mission handler. Reject the mission if the droneSet is empty. 
-        Gives random colors to the drones ins the droneSet.
-        Save the newly created mission object and saves it in the database.
+    def __init__(self, dronesSet: DronesSet, missionType: MissionType,
+                 sendMessageCallable: Callable[[Message], None]):
+        """Initialize the mission handler. Reject the mission if the droneSet
+        is empty. Gives random colors to the drones ins the droneSet. Save
+        the newly created mission object and saves it in the database.
 
-          @param droneSet: the set of drones participating in the mission.
-          @param missionType: The type of the mission: real or fake. Fake is for demo purposes only.
-          @param sendMessageCallable: the function to call to send mission pulses.
+          @param dronesSet: the set of drones participating in the mission.
+          @param missionType: The type of the mission: real or fake. Fake is
+          for demo purposes only. @param sendMessageCallable: the function to
+          call to send mission pulses.
         """
         drones: List[Drone] = list(dronesSet.getDrones().values())
         if len(drones) == 0:
@@ -35,7 +37,8 @@ class MissionHandler:
         self.sendMessageCallable = sendMessageCallable
         missionDrones: MissionDrones = {
             drone['name']: (
-                CSS_PREDEFINED_COLORS[drone['name'].__hash__() % len(CSS_PREDEFINED_COLORS)])
+                CSS_PREDEFINED_COLORS[
+                    drone['name'].__hash__() % len(CSS_PREDEFINED_COLORS)])
             for drone in drones
         }
         timestamp = getTimestamp()
@@ -75,6 +78,7 @@ class MissionHandler:
             if r > 65530:
                 i += 1
                 continue
+            angle = orientation + i * math.pi / 2
             point = Vec2(
                 x=r * self.RANGE_SCALE * math.cos(absYaw + i * math.pi / 2) * -1 + position['x'],
                 y=r * self.RANGE_SCALE * math.sin(absYaw + i * math.pi / 2) + position['y']
@@ -106,9 +110,10 @@ class MissionHandler:
         self.sendMessageCallable(
             Message(type='missionPulse', data=missionPulse))
 
-    def assingPointsToShapes(self):
-        """Goes over all the point found during the mission and try to regroup them into shapes.
-        Then add the created shape to the current mission.
+    def assignPointsToShapes(self):
+        """Goes over all the point found during the mission and try to
+        regroup them into shapes. Then add the created shape to the current
+        mission.
         """
         pointsCopy = self.mission['points'].copy()
 
@@ -120,12 +125,15 @@ class MissionHandler:
 
     def recursiveAddPointToShape(self, missionPoints: List[MissionPoint], pointsToAdd: List[MissionPoint],
                                  currentShape: List[Vec2]):
-        """Add the points to the current shape, then find the nearest point from the given points, sort them by distance, 
-        and call this method withe the newly found points.
+        """Add the points to the current shape, then find the nearest point
+        from the given points, sort them by distance, and call this method
+        with the newly found points.
 
           @param missionPoints: the points witch are not in a shape yet.
-          @param pointsToAdd: a list of the points found in the previous iteration.
-          @param currentShape: the current shape in witch the pointsToAdd will be added.
+          @param currentShape: TODO
+          @param pointsToAdd: a list of the points found in the previous
+          iteration. @param currentShape: the current shape in witch the
+          pointsToAdd will be added.
         """
         for point in pointsToAdd:
             currentShape.append(point['value'])
@@ -133,16 +141,17 @@ class MissionHandler:
             nexPointsToAdd = {}
             pointsToRemove = []
             for missionPoint in missionPoints:
-                dist = math.dist([missionPoint['value']['x'], missionPoint['value']['y']], [
-                    point['value']['x'], point['value']['y']])
+                dist = math.dist(
+                    [missionPoint['value']['x'], missionPoint['value']['y']], [
+                        point['value']['x'], point['value']['y']])
                 if dist == 0.0:
                     pointsToRemove.append(missionPoint)
                 elif dist <= self.MAX_DISTANCE:
                     nexPointsToAdd[dist] = missionPoint
-            for rmPoint in list(nexPointsToAdd.values()):
-                missionPoints.remove(rmPoint)
-            for rmPoint in pointsToRemove:
-                missionPoints.remove(rmPoint)
+            for p in list(nexPointsToAdd.values()):
+                missionPoints.remove(p)
+            for p in pointsToRemove:
+                missionPoints.remove(p)
 
             nexPointsToAdd = dict(
                 sorted(nexPointsToAdd.items(), key=lambda i: i[0]))
@@ -152,9 +161,10 @@ class MissionHandler:
                     missionPoints, list(nexPointsToAdd.values()), currentShape)
 
     def endMission(self):
-        """End the mission. Save the ’done’ status to the database and inform the dashboards.
+        """End the mission. Save the ’done’ status to the database and inform
+        the dashboards.
         """
-        self.assingPointsToShapes()
+        self.assignPointsToShapes()
         status: MissionStatus = 'done'
         missionPulse = MissionPulse(
             id=self.mission['id'],

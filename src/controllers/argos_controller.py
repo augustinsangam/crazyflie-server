@@ -33,7 +33,8 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def launch() -> Thread:
-        """Launches a thread in witch the TCP server will start, and return that thread.
+        """Launches a thread in witch the TCP server will start, and return
+        that thread.
 
         """
         thread = Thread(target=ArgosController.launchServer)
@@ -42,7 +43,8 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def launchServer():
-        """Start the TCP server in non-blocking mode. Tries to accept new connection as long as the server is running.
+        """Start the TCP server in non-blocking mode. Tries to accept new
+        connection as long as the server is running.
 
         """
         TCPServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -68,14 +70,15 @@ class ArgosController(metaclass=Singleton):
         """
         # for client in ArgosController.clients:
         #     client.closeClient()
-        if ArgosController.client != None:
+        if ArgosController.client is not None:
             ArgosController.client.closeClient()
         ArgosController.running = False
         ArgosController.TCPServer.close()
 
     @staticmethod
     def handleClient(clientSocket, addr):
-        """Creates a client witch will listen to the new connection. Callbacks handlers are set for every event.
+        """Creates a client witch will listen to the new connection.
+        Callbacks handlers are set for every event.
 
           @param clientSocket: the socket of the new connection.
         """
@@ -105,8 +108,9 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def onClientDisconnect(client: ArgosClient) -> None:
-        """Called by a client when it disconnects from its socket. It send a message to the \
-            dashboards to inform the disconnection only if the server is running.
+        """Called by a client when it disconnects from its socket. It send a
+        message to the dashboards to inform the disconnection only if the
+        server is running.
 
           @param client: the client witch called the function.
         """
@@ -126,8 +130,9 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def onClientReceivedMessage(client: ArgosClient, message: bytes) -> None:
-        """Called by a client when it receives a message. The message is first decoded from byte to ascii,
-        then parsed as json. It updates the drone stored status, then sends the message to the dashboards.
+        """Called by a client when it receives a message. The message is
+        first decoded from byte to ascii, then parsed as json. It updates the
+        drone stored status, then sends the message to the dashboards.
 
           @param client: the client witch called the function.
           @param message: the message in bytes received by the client.
@@ -150,12 +155,15 @@ class ArgosController(metaclass=Singleton):
             drone = Drone(**droneData)
             ArgosController.dronesSet.setDrone(drone['name'], drone)
             CommunicationService().sendToDashboardController(parsedMessage)
-            
+
             try:
-                ArgosController.missionHandler.onReceivedPositionAndRange(drone['name'], Vec2(x=drone['position'][0], y=drone['position'][1]), drone['yaw'], drone['ranges'])
+                ArgosController.missionHandler.onReceivedPositionAndRange(
+                    drone['name'],
+                    Vec2(x=drone['position'][0], y=drone['position'][1]),
+                    math.pi / 4, drone['ranges'])
             except:
                 pass
-    
+
     @staticmethod
     def onClientRaisedError(client: ArgosClient, error: Exception) -> None:
         """Called when a client raises an error while it waits for messages.
@@ -168,8 +176,9 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def onControllerReceivedMessage(message: Message):
-        """Decide what to do with the given message. It can start a mission or send the message as is to the clients.
-          @param message: the message received.
+        """Decide what to do with the given message. It can start a mission
+        or send the message as is to the clients. @param message: the message
+        received.
         """
         if message['type'] == 'startMission':
             missionRequestData: dict = message['data']
@@ -182,7 +191,8 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def sendMessage(message: Message) -> None:
-        """Sends the specified message to the client. Start a mission if the message type is 'startMission'.
+        """Sends the specified message to the client. Start a mission if the
+        message type is 'startMission'.
 
           @param message: the message to send.
         """
@@ -191,7 +201,8 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def sendMessageToSocket(clientSocket, message: Message):
-        """Sends the specified message to the specified socket after converting it from json to string.
+        """Sends the specified message to the specified socket after
+        converting it from json to string.
 
           @param clientSocket: the socket to send the message.
           @param message: the message to send.
@@ -200,27 +211,31 @@ class ArgosController(metaclass=Singleton):
         clientSocket.send(bytes(messageStr, 'ascii'))
 
     @staticmethod
-    def getDroneIdentifier(socket) -> Union[Drone, Any]:
-        """Find the drone associated with the specified socket. If the drone name isn't yet registered, the socket is returned.
-        NOT USED ANYMORE
+    def getDroneIdentifier(webSocket) -> Union[Drone, Any]:
+        """Find the drone associated with the specified socket. If the drone
+        name isn't yet registered, the socket is returned. NOT USED ANYMORE
 
-          @param socket: the socket of the searched drone.
+          @param webSocket: the socket of the searched drone.
         """
-        drone: Drone = ArgosController.dronesSet.getDrone(socket)
-        return drone['name'] if drone else socket
+        drone: Drone = ArgosController.dronesSet.getDrone(webSocket)
+        return drone['name'] if drone else webSocket
 
     @staticmethod
     def startFakeMission():
-        """Start a fake mission in a separed thread. For demo purposes only.
+        """Start a fake mission in a separated thread. For demo purposes only.
 
         """
         fakeDronesSet = DronesSet()
         fakeDronesSet.setDrone('Drone # 1',
-                               Drone(name='Drone#1', speed=0, battery=0, position=[0, 0, 0], timestamp=0,
-                                     flying=True, ledOn=True, real=False, ranges=[0, 0, 0, 0, 0], yaw=0.0))
+                               Drone(name='Drone#1', speed=0, battery=0,
+                                     position=[0, 0, 0], timestamp=0,
+                                     flying=True, ledOn=True, real=False,
+                                     ranges=[0, 0, 0, 0], yaw=0))
         fakeDronesSet.setDrone('Drone # 2',
-                               Drone(name='Drone#2', speed=0, battery=0, position=[0, 0, 0], timestamp=0,
-                                     flying=True, ledOn=True, real=False, ranges=[0, 0, 0, 0, 0], yaw=0.0))
+                               Drone(name='Drone#2', speed=0, battery=0,
+                                     position=[0, 0, 0], timestamp=0,
+                                     flying=True, ledOn=True, real=False,
+                                     ranges=[0, 0, 0, 0], yaw=0))
         ArgosController.missionHandler = MissionHandler(
             dronesSet=fakeDronesSet,
             missionType='fake',
@@ -230,7 +245,8 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def startMission():
-        """Start a mission. Order drones to takeoff and initialize a mission handler.
+        """Start a mission. Order drones to takeoff and initialize a mission
+        handler.
 
         """
         logging.info("\n START MISSION \n")
@@ -245,12 +261,14 @@ class ArgosController(metaclass=Singleton):
         ArgosController.missionHandler = MissionHandler(
             dronesSet=ArgosController.dronesSet,
             missionType='argos',
-            sendMessageCallable=lambda m: CommunicationService().sendToDashboardController(m)
+            sendMessageCallable=lambda
+                m: CommunicationService().sendToDashboardController(m)
         )
 
     @staticmethod
     def simulateFakeMission():
-        """Start a fake mission using the droneFeed file to simulate flying drones. For demo purposes only.
+        """Start a fake mission using the droneFeed file to simulate flying
+        drones. For demo purposes only.
         """
         with open('data/droneFeed.json', 'r') as f:
             jsonDronesFeed = json.load(f)

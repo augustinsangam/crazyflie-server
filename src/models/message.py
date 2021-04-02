@@ -11,6 +11,9 @@ class Message(TypedDict):
         'disconnect',
         'startMission',
         'mission',
-        'missionPulse'
+        'missionPulse',
+        'stopMission',
+        'loadProject',
+        'loadProjectLog'
     ]
     data: dict

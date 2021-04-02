@@ -3,6 +3,7 @@ from typing import List, TypedDict
 
 class Drone(TypedDict):
     name: str
+    timestamp: int
     speed: float
     battery: float
     position: List[float]

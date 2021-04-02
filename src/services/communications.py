@@ -29,7 +29,7 @@ class CommunicationService(metaclass=Singleton):
         """Send the message to the dashboard controller.
           @param message: the message to send.
         """
-        self.dashboardController.sendMessage(message)
+        self.dashboardController.onControllerReceivedMessage(message)
 
     def sendToArgosController(self, message: Message):
         """Send the message to the argos controller.

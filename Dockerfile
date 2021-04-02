@@ -13,4 +13,4 @@ RUN curl -JR --remote-name-all \
 WORKDIR /build
 ENV PYTHONPATH=/opt
 
-CMD pip -q install -r /server/requirements.txt && python /server/src/server.py
+CMD pip -q install -r /server/requirements.txt && python /server/server.py
