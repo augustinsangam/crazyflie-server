@@ -137,6 +137,19 @@ class CrazyradioController(metaclass=Singleton):
             )
         uri: str = interface[0]
         client.connect(uri)
+        newDrone = Drone(
+            name=uri,
+            timestamp=getTimestamp(),
+            speed=0.0,
+            battery=0,
+            position=[0.0, 0.0, 0.0],
+            yaw=0.0,
+            ranges=[0, 0, 0, 0],
+            flying=False,
+            ledOn=False,
+            real=True
+        )
+        CrazyradioController.dronesSet.setDrone(uri, newDrone)
 
     @staticmethod
     def onClientConnect(client: CrazyradioClient) -> None:
@@ -180,21 +193,43 @@ class CrazyradioController(metaclass=Singleton):
         droneIdentifier = CrazyradioController.getDroneIdentifier(client.uri)
         try:
 
-            message = struct.unpack("<HHHHHfff??", data)
-            front, left, back, right, up, orientation, speed, battery, flying, ledOn = message
-            drone = Drone(
-                battery=battery,
-                flying=flying,
-                position=[0, 0, 0],
-                timestamp=getTimestamp(),
-                speed=speed,
-                ledOn=ledOn,
-                real=True,
-                name=client.uri,
-                yaw=orientation,
-                ranges=[front, left, back, right],
-            )
-            CrazyradioController.dronesSet.setDrone(client.uri, drone)
+            (code,) = struct.unpack_from("<h", data, 0)
+            print("le code en bas")
+            print(code)
+            drone = CrazyradioController.dronesSet.getDrone(client.uri)
+            if not drone:
+                logging.error("Unknown drone received a message")
+                return
+
+            if code == 0:
+                (cd, battery) = struct.unpack("<hf", data)
+                print(f"Received : {cd}, {battery}")
+                drone = {**drone, "battery": battery}
+            elif code == 1:
+                (cd, timestamp) = struct.unpack("<hQ", data)
+                print(f"Received : {cd}, {timestamp}")
+                drone = {**drone, "timestamp": getTimestamp()}
+            elif code == 2:
+                (cd, speed) = struct.unpack("<hf", data)
+                print(f"Received : {cd}, {speed}")
+                drone = {**drone, "speed": speed}
+            elif code == 3:
+                (cd, positionX, positionY, positionZ) = struct.unpack("<hfff",
+                                                                      data)
+                print(f"Received : {cd}, {positionX}, {positionY}, {positionZ}")
+                drone = {**drone, "position": [positionX, positionY, positionZ]}
+            elif code == 4:
+                (cd, front, left, back, right, up) = struct.unpack("<hHHHHH",
+                                                                   data)
+                print(
+                    f"Received : {cd}, {front}, {left}, {back}, {right}, {up}")
+                drone = {**drone, "ranges": [front, left, back, right]}
+            elif code == 5:
+                (cd, flying, ledOn) = struct.unpack("<h??", data)
+                print(f"Received : {cd}, {flying}, {ledOn}")
+                drone = {**drone, "ledOn": ledOn, "flying": flying}
+            else:
+                print("Unknown code")
 
             # parsedMessage: Message = json.load(StringIO(message))
         except ValueError:
@@ -203,20 +238,20 @@ class CrazyradioController(metaclass=Singleton):
                 f'format : {data}')
         else:
             logging.debug(
-                f'Crazyradio client {droneIdentifier} received message : {message}')
+                f'Crazyradio client {droneIdentifier} received message : {data}')
             # if parsedMessage['type'] != 'pulse':
             # return
             # droneData: dict = parsedMessage['data']
             # Force Crazyradio drone to be real
             # droneData = {**droneData, "real": True}
             # drone = Drone(**droneData)
-            CrazyradioController.dronesSet.setDrone(client.uri, drone)
-            CrazyradioController.missionHandler.onReceivedPositionAndRange(
-                drone['name'],
-                Vec2(x=drone['position'][0], y=drone['position'][1]),
-                drone['yaw'],
-                drone['ranges'][0:4]
-            )
+            # CrazyradioController.dronesSet.setDrone(client.uri, drone)
+            # CrazyradioController.missionHandler.onReceivedPositionAndRange(
+            #     drone['name'],
+            #     Vec2(x=drone['position'][0], y=drone['position'][1]),
+            #     drone['yaw'],
+            #     drone['ranges'][0:4]
+            # )
             CommunicationService().sendToDashboardController(
                 Message(
                     type="pulse",
