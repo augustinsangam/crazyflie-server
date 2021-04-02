@@ -231,6 +231,8 @@ class CrazyradioController(metaclass=Singleton):
             else:
                 print("Unknown code")
 
+            CrazyradioController.dronesSet.setDrone(client.uri, drone)
+
             # parsedMessage: Message = json.load(StringIO(message))
         except ValueError:
             logging.error(
