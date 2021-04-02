@@ -6,8 +6,8 @@ class Drone(TypedDict):
     speed: float
     battery: float
     position: List[float]
-    orientation: float
-    multiRange: List[int]
+    yaw: float
+    ranges: List[int]
     timestamp: int
     flying: bool
     ledOn: bool

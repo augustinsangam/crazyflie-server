@@ -132,13 +132,12 @@ class ArgosController(metaclass=Singleton):
           @param client: the client witch called the function.
           @param message: the message in bytes received by the client.
         """
-        # droneIdentifier = ArgosController.getDroneIdentifier(client.socket)
         try:
             messageStr = message.decode('utf-8')
             parsedMessage: Message = json.load(StringIO(messageStr))
         except ValueError:
-            # logging.error(
-            #     f'ARGoS client received a wrong json format : {message}')
+            logging.error(
+                f'ARGoS client received a wrong json format : {message}')
             pass
         else:
             logging.info(
@@ -149,12 +148,11 @@ class ArgosController(metaclass=Singleton):
             droneData: dict = {**droneData, "real": False}
             # Force ARGoS drone not to be real
             drone = Drone(**droneData)
-            # print(f'\nDrone on recieve message: {drone}\n')
             ArgosController.dronesSet.setDrone(drone['name'], drone)
             CommunicationService().sendToDashboardController(parsedMessage)
             
             try:
-                ArgosController.missionHandler.onReceivedPositionAndRange(drone['name'], Vec2(x=drone['position'][0], y=drone['position'][1]), math.pi/4, drone['ranges'])
+                ArgosController.missionHandler.onReceivedPositionAndRange(drone['name'], Vec2(x=drone['position'][0], y=drone['position'][1]), drone['yaw'], drone['ranges'])
             except:
                 pass
     
@@ -165,7 +163,6 @@ class ArgosController(metaclass=Singleton):
           @param client: the client witch called the function.
           @param error: the exception  raised by the client.
         """
-        # droneIdentifier = ArgosController.getDroneIdentifier(client.socket)
         logging.info(
             f'ARGoS client raised an error:\n{error}')
 
@@ -189,18 +186,6 @@ class ArgosController(metaclass=Singleton):
 
           @param message: the message to send.
         """
-
-        # targetedDroneName = message['data']['name']
-        # if targetedDroneName == '*':
-        # for client in ArgosController.clients:
-        #     ArgosController.sendMessageToSocket(client.socket, message)
-        # return
-
-        # droneSearchReturn = ArgosController.dronesSet.findDroneByName(
-        #     targetedDroneName)
-        # if not droneSearchReturn:
-        #     return
-        # socket = droneSearchReturn['key']
         ArgosController.sendMessageToSocket(
             ArgosController.client.socket, message)
 
@@ -232,10 +217,10 @@ class ArgosController(metaclass=Singleton):
         fakeDronesSet = DronesSet()
         fakeDronesSet.setDrone('Drone # 1',
                                Drone(name='Drone#1', speed=0, battery=0, position=[0, 0, 0], timestamp=0,
-                                     flying=True, ledOn=True, real=False, multiRange=[0, 0, 0, 0, 0]))
+                                     flying=True, ledOn=True, real=False, ranges=[0, 0, 0, 0, 0], yaw=0.0))
         fakeDronesSet.setDrone('Drone # 2',
                                Drone(name='Drone#2', speed=0, battery=0, position=[0, 0, 0], timestamp=0,
-                                     flying=True, ledOn=True, real=False, multiRange=[0, 0, 0, 0, 0]))
+                                     flying=True, ledOn=True, real=False, ranges=[0, 0, 0, 0, 0], yaw=0.0))
         ArgosController.missionHandler = MissionHandler(
             dronesSet=fakeDronesSet,
             missionType='fake',
@@ -256,8 +241,7 @@ class ArgosController(metaclass=Singleton):
                     data={"name": drone}
                 )
             )
-        # if ArgosController.missionHandler is not None:
-        #     ArgosController.missionHandler.endMission()
+        
         ArgosController.missionHandler = MissionHandler(
             dronesSet=ArgosController.dronesSet,
             missionType='argos',

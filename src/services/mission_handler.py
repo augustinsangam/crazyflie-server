@@ -13,7 +13,6 @@ from src.utils.timestamp import getTimestamp
 
 
 class MissionHandler:
-
     RANGE_SCALE: float = 0.01
     MAX_DISTANCE = 0.21
 
@@ -54,26 +53,35 @@ class MissionHandler:
         DatabaseService.saveMission(self.mission['id'], self.mission)
         sendMessageCallable(Message(type='mission', data=self.mission))
 
-    def onReceivedPositionAndRange(self, droneName: str, position: Vec2, orientation: float, ranges: List[int]):
+    def onReceivedPositionAndRange(self, droneName: str, position: Vec2, yaw: float, ranges: List[int]):
         """Calculate the point indicated by the given ranges and orientation.
 
           @param droneName: the name of the drone witch sent the informations.
-          @param orientation: the angle of the drone in radiant.
+          @param position: the 2D position of the drone.
+          @param yaw: the angle of the drone in radiant.
           @param ranges: the list of ranges (front, left, back, right)
         """
         points: List[Vec2] = []
+        xtemp = position['x']
+        position['x'] = position['y']
+        position['y'] = xtemp
         i = 0
+        absYaw = 0
+        if yaw < 0:
+            absYaw = math.pi + math.pi + yaw
+        else:
+            absYaw = yaw
         for r in ranges:
             if r > 65530:
+                i += 1
                 continue
             point = Vec2(
-                x=r * self.RANGE_SCALE *
-                math.cos(orientation + i * math.pi / 2) + position['x'],
-                y=r * self.RANGE_SCALE *
-                math.sin(orientation + i * math.pi / 2) + position['y']
+                x=r * self.RANGE_SCALE * math.cos(absYaw + i * math.pi / 2) * -1 + position['x'],
+                y=r * self.RANGE_SCALE * math.sin(absYaw + i * math.pi / 2) + position['y']
             )
             points.append(point)
-            i+=1
+            i += 1
+        logging.info(f'{droneName}:: pos: {position}, yaw:{absYaw}, ranges:{ranges}, points:{points}')
         self.handlePositionAndBorders(
             droneName, position, points)
 
@@ -106,11 +114,12 @@ class MissionHandler:
 
         while len(pointsCopy):
             shape = []
-            self.recusrsiveAddPointToShape(pointsCopy, [pointsCopy[0]], shape)
+            self.recursiveAddPointToShape(pointsCopy, [pointsCopy[0]], shape)
             shape.append(shape[0])
             self.mission['shapes'].append(shape)
 
-    def recusrsiveAddPointToShape(self, missionPoints: List[MissionPoint], pointsToAdd: List[MissionPoint], currentShape: List[Vec2]):
+    def recursiveAddPointToShape(self, missionPoints: List[MissionPoint], pointsToAdd: List[MissionPoint],
+                                 currentShape: List[Vec2]):
         """Add the points to the current shape, then find the nearest point from the given points, sort them by distance, 
         and call this method withe the newly found points.
 
@@ -130,16 +139,16 @@ class MissionHandler:
                     pointsToRemove.append(missionPoint)
                 elif dist <= self.MAX_DISTANCE:
                     nexPointsToAdd[dist] = missionPoint
-            for point in list(nexPointsToAdd.values()):
-                missionPoints.remove(point)
-            for point in pointsToRemove:
-                missionPoints.remove(point)
+            for rmPoint in list(nexPointsToAdd.values()):
+                missionPoints.remove(rmPoint)
+            for rmPoint in pointsToRemove:
+                missionPoints.remove(rmPoint)
 
             nexPointsToAdd = dict(
                 sorted(nexPointsToAdd.items(), key=lambda i: i[0]))
 
             if len(nexPointsToAdd):
-                self.recusrsiveAddPointToShape(
+                self.recursiveAddPointToShape(
                     missionPoints, list(nexPointsToAdd.values()), currentShape)
 
     def endMission(self):
