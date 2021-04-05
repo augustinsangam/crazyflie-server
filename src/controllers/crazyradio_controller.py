@@ -5,6 +5,7 @@ import threading
 import time
 from threading import Thread
 from typing import Any, List, Set, Union
+from enum import Enum, IntEnum
 
 import cflib.crtp
 from cflib.crtp.radiodriver import RadioManager
@@ -22,6 +23,23 @@ from src.services.communications import CommunicationService
 from src.services.drones_set import DronesSet
 from src.utils.timestamp import getTimestamp
 
+class PacketReceivedCode (IntEnum):
+    BATTERY=0
+    TIMESTAMP=1
+    SPEED=2
+    POSITION=3
+    SENSORS=4
+    OTHERS=5
+
+class PacketSentCode (IntEnum):
+    START_MISSION=0
+    END_MISSION=1
+    RETURN_TO_BASE=2
+    TAKE_OFF=3
+    LANDING=4
+    LED_ON=5
+    LED_OFF=6
+
 
 class CrazyradioController(metaclass=Singleton):
     running = True
@@ -31,6 +49,7 @@ class CrazyradioController(metaclass=Singleton):
     projectCurrentlyLoading = False
     FIRST_DRONE_ADDRESS = 0xE7E7E7E701
     MAX_DRONE_NUMBER = 2
+
 
     @staticmethod
     def launch() -> Thread:
@@ -201,33 +220,39 @@ class CrazyradioController(metaclass=Singleton):
                 logging.error("Unknown drone received a message")
                 return
 
-            if code == 0:
+            if code == PacketReceivedCode.BATTERY:
                 (cd, battery) = struct.unpack("<hf", data)
                 print(f"Received : {cd}, {battery}")
                 drone = {**drone, "battery": battery}
-            elif code == 1:
+
+            elif code == PacketReceivedCode.TIMESTAMP:
                 (cd, timestamp) = struct.unpack("<hQ", data)
                 print(f"Received : {cd}, {timestamp}")
                 drone = {**drone, "timestamp": getTimestamp()}
-            elif code == 2:
+
+            elif code == PacketReceivedCode.SPEED:
                 (cd, speed) = struct.unpack("<hf", data)
                 print(f"Received : {cd}, {speed}")
                 drone = {**drone, "speed": speed}
-            elif code == 3:
+
+            elif code == PacketReceivedCode.POSITION:
                 (cd, positionX, positionY, positionZ) = struct.unpack("<hfff",
                                                                       data)
                 print(f"Received : {cd}, {positionX}, {positionY}, {positionZ}")
                 drone = {**drone, "position": [positionX, positionY, positionZ]}
-            elif code == 4:
+
+            elif code == PacketReceivedCode.SENSORS:
                 (cd, front, left, back, right, up) = struct.unpack("<hHHHHH",
                                                                    data)
                 print(
                     f"Received : {cd}, {front}, {left}, {back}, {right}, {up}")
                 drone = {**drone, "ranges": [front, left, back, right]}
-            elif code == 5:
+
+            elif code == PacketReceivedCode.OTHERS:
                 (cd, flying, ledOn) = struct.unpack("<h??", data)
                 print(f"Received : {cd}, {flying}, {ledOn}")
                 drone = {**drone, "ledOn": ledOn, "flying": flying}
+
             else:
                 print("Unknown code")
 
