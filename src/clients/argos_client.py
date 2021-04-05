@@ -28,7 +28,7 @@ class ArgosClient:
         self.connection.callAllCallbacks(HandlerType.connection)
         try:
             while True:
-                message = self.socket.recv(1024)
+                message = self.socket.recv(2048)
                 if message == b'':
                     self.socket.close()
                     break
