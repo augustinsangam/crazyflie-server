@@ -18,6 +18,8 @@ from src.services.communications import CommunicationService
 from src.services.drones_set import DronesSet
 from src.services.mission_handler import MissionHandler
 
+from json import encoder
+encoder.FLOAT_REPR = lambda o: format(o, '.3f')
 
 class ArgosController(metaclass=Singleton):
     TCP_HOST = '0.0.0.0'
@@ -139,30 +141,34 @@ class ArgosController(metaclass=Singleton):
         """
         try:
             messageStr = message.decode('utf-8')
-            parsedMessage: Message = json.load(StringIO(messageStr))
-        except ValueError:
-            logging.error(
-                f'ARGoS client received a wrong json format : {message}')
+            messages = list(filter(lambda x: x, messageStr.split('\n')))
+            parsedMessages: List = list(map(lambda x: json.load(StringIO(x)), messages))
+        except ValueError as e:
+            # logging.error(e)
+
+            #logging.error(
+             #   f'ARGoS client received a wrong json format : {messages}')
             pass
         else:
-            logging.info(
-                f'ARGoS client received message : {messageStr}')
-            if parsedMessage['type'] != 'pulse':
-                return
-            droneData: dict = parsedMessage['data']
-            droneData: dict = {**droneData, "real": False}
-            # Force ARGoS drone not to be real
-            drone = Drone(**droneData)
-            ArgosController.dronesSet.setDrone(drone['name'], drone)
-            CommunicationService().sendToDashboardController(parsedMessage)
+            #logging.info(#"msg received")
+            #    f'ARGoS client received message : {messageStr}')
+            for parsedMessage in parsedMessages:
+                if parsedMessage['type'] != 'pulse':
+                    return
+                droneData: dict = parsedMessage['data']
+                droneData: dict = {**droneData, "real": False}
+                # Force ARGoS drone not to be real
+                drone = Drone(**droneData)
+                ArgosController.dronesSet.setDrone(drone['name'], drone)
+                CommunicationService().sendToDashboardController(parsedMessage)
 
-            try:
-                ArgosController.missionHandler.onReceivedPositionAndRange(
-                    drone['name'],
-                    Vec2(x=drone['position'][0], y=drone['position'][1]),
-                    math.pi / 4, drone['ranges'])
-            except:
-                pass
+                try:
+                    ArgosController.missionHandler.onReceivedPositionAndRange(
+                        drone['name'],
+                        Vec2(x=drone['position'][0], y=drone['position'][1]),
+                        drone['yaw'], drone['ranges'])
+                except:
+                    return
 
     @staticmethod
     def onClientRaisedError(client: ArgosClient, error: Exception) -> None:
@@ -208,7 +214,7 @@ class ArgosController(metaclass=Singleton):
           @param message: the message to send.
         """
         messageStr = json.dumps(message)
-        clientSocket.send(bytes(messageStr, 'ascii'))
+        clientSocket.send(bytes(messageStr + '\n', 'ascii'))
 
     @staticmethod
     def getDroneIdentifier(webSocket) -> Union[Drone, Any]:

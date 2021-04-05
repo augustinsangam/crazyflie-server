@@ -1,6 +1,7 @@
 import logging
 import math
-from typing import List, Callable
+import kdtree
+from typing import List, Callable, Tuple
 from src.services.database import DatabaseService
 
 from src.models.drone import Drone
@@ -15,6 +16,7 @@ from src.utils.timestamp import getTimestamp
 class MissionHandler:
     RANGE_SCALE: float = 0.01
     MAX_DISTANCE = 0.21
+    MIN_POINTS_DIST = 0.005
 
     def __init__(self, dronesSet: DronesSet, missionType: MissionType,
                  sendMessageCallable: Callable[[Message], None]):
@@ -55,6 +57,7 @@ class MissionHandler:
         )
         DatabaseService.saveMission(self.mission['id'], self.mission)
         sendMessageCallable(Message(type='mission', data=self.mission))
+        self.kdtree = kdtree.create(dimensions=2)
 
     def onReceivedPositionAndRange(self, droneName: str, position: Vec2, yaw: float, ranges: List[int]):
         """Calculate the point indicated by the given ranges and orientation.
@@ -64,6 +67,7 @@ class MissionHandler:
           @param yaw: the angle of the drone in radiant.
           @param ranges: the list of ranges (front, left, back, right)
         """
+
         points: List[Vec2] = []
         xtemp = position['x']
         position['x'] = position['y']
@@ -78,16 +82,26 @@ class MissionHandler:
             if r > 65530:
                 i += 1
                 continue
-            angle = orientation + i * math.pi / 2
             point = Vec2(
-                x=r * self.RANGE_SCALE * math.cos(absYaw + i * math.pi / 2) * -1 + position['x'],
-                y=r * self.RANGE_SCALE * math.sin(absYaw + i * math.pi / 2) + position['y']
+                x=round(r * self.RANGE_SCALE * math.cos(absYaw + i * math.pi / 2) * -1 + position['x'], 4),
+                y=round(r * self.RANGE_SCALE * math.sin(absYaw + i * math.pi / 2) + position['y'], 4)
             )
-            points.append(point)
+            if self.checkPointValidity((point['x'], point['y'])):
+                points.append(point)
             i += 1
-        logging.info(f'{droneName}:: pos: {position}, yaw:{absYaw}, ranges:{ranges}, points:{points}')
         self.handlePositionAndBorders(
             droneName, position, points)
+
+    def checkPointValidity(self, point: Tuple[float, float]) -> bool:
+        neighbor = self.kdtree.search_nn(point)
+        if not neighbor:
+            self.kdtree.add(point)
+            return True
+        if neighbor[1] <= self.MIN_POINTS_DIST:
+            return False
+        else:
+            self.kdtree.add(point)
+            return True
 
     def handlePositionAndBorders(self, droneName: str, position: Vec2, points: List[Vec2]):
         """Add the new position of the drone as well as the position of the border it found to the mission.
