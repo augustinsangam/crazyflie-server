@@ -50,9 +50,9 @@ class CrazyradioClient:
         """
         if message['data']['name'] == self.uri or message['data']['name'] == '*':
             if message['type'] == 'lighten':
-                self._cf.appchannel.send_packet(struct.pack("<?", True))
+                self._cf.appchannel.send_packet(struct.pack("<i",5)) # while be change
             elif message['type'] == 'darken':
-                self._cf.appchannel.send_packet(struct.pack("<?", False))
+                self._cf.appchannel.send_packet(struct.pack("<i",6)) # same
             else:
                 logging.error(
                     f'Crazyradio got unrecognized command to send : {message}')
