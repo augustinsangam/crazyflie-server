@@ -1,13 +1,13 @@
 import logging
 import math
-import kdtree
-from typing import List, Callable, Tuple
-from src.services.database import DatabaseService
+from typing import Callable, List, Tuple
 
+import kdtree
 from src.models.drone import Drone
 from src.models.message import Message
-from src.models.mission import MissionType, MissionStatus, Mission, Vec2, \
-    MissionPulse, MissionPoint, MissionDrones
+from src.models.mission import (Mission, MissionDrones, MissionPoint,
+                                MissionPulse, MissionStatus, MissionType, Vec2)
+from src.services.database import DatabaseService
 from src.services.drones_set import DronesSet
 from src.utils.css_predifined_colors import CSS_PREDEFINED_COLORS
 from src.utils.timestamp import getTimestamp
@@ -83,8 +83,10 @@ class MissionHandler:
                 i += 1
                 continue
             point = Vec2(
-                x=round(r * self.RANGE_SCALE * math.cos(absYaw + i * math.pi / 2) * -1 + position['x'], 4),
-                y=round(r * self.RANGE_SCALE * math.sin(absYaw + i * math.pi / 2) + position['y'], 4)
+                x=round(r * self.RANGE_SCALE * math.cos(absYaw +
+                                                        i * math.pi / 2) * -1 + position['x'], 4),
+                y=round(r * self.RANGE_SCALE * math.sin(absYaw +
+                                                        i * math.pi / 2) + position['y'], 4)
             )
             if self.checkPointValidity((point['x'], point['y'])):
                 points.append(point)
