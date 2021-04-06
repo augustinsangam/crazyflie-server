@@ -49,7 +49,7 @@ class CrazyradioController(metaclass=Singleton):
     dronesSet = DronesSet()
     dronesMessageReceivedCount: Dict[str, int] = defaultdict(int)
     clients: Set[CrazyradioClient] = set()
-    missionHandler: MissionHandler
+    missionHandler: MissionHandler = None
     projectCurrentlyLoading = False
     FIRST_DRONE_ADDRESS = 0xE7E7E7E701
     MAX_DRONE_NUMBER = 2
@@ -268,28 +268,25 @@ class CrazyradioController(metaclass=Singleton):
         else:
             logging.debug(
                 f'Crazyradio client {droneIdentifier} received message : {data}')
-            # if parsedMessage['type'] != 'pulse':
-            # return
-            # droneData: dict = parsedMessage['data']
-            # Force Crazyradio drone to be real
-            # droneData = {**droneData, "real": True}
-            # drone = Drone(**droneData)
-            # CrazyradioController.dronesSet.setDrone(client.uri, drone)
-            # CrazyradioController.missionHandler.onReceivedPositionAndRange(
-            #     drone['name'],
-            #     Vec2(x=drone['position'][0], y=drone['position'][1]),
-            #     drone['yaw'],
-            #     drone['ranges'][0:4]
-            # )
-            name: str = drone['name'] # noqa
+
+            name: str = drone['name']  # noqa
             CrazyradioController.dronesMessageReceivedCount[name] += 1
             if CrazyradioController.dronesMessageReceivedCount[name] % 6 == 0:
+                data = droneDiff(oldDrone, drone)
                 CommunicationService().sendToDashboardController(
                     Message(
                         type="pulse",
-                        data=droneDiff(oldDrone, drone)
+                        data=data
                     )
                 )
+                if CrazyradioController.missionHandler is not None:
+                    CrazyradioController.missionHandler.onReceivedPositionAndRange(
+                        data['name'],
+                        Vec2(x=data['position'][0],
+                             y=data['position'][1]),
+                        data['yaw'],
+                        data['ranges'][0:4]
+                    )
 
     @staticmethod
     def onClientRaisedError(client: CrazyradioClient, error: Exception) -> None:

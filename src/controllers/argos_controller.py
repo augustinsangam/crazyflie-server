@@ -28,7 +28,7 @@ class ArgosController(metaclass=Singleton):
     running = True
     dronesSet = DronesSet()
     clients: Set[ArgosClient] = set()
-    missionHandler: MissionHandler
+    missionHandler: MissionHandler = None
     client: ArgosClient = None
 
     @staticmethod
@@ -163,13 +163,11 @@ class ArgosController(metaclass=Singleton):
                     )
                 )
 
-                try:
+                if ArgosController.missionHandler is not None:
                     ArgosController.missionHandler.onReceivedPositionAndRange(
                         drone['name'],
                         Vec2(x=drone['position'][0], y=drone['position'][1]),
                         drone['yaw'], drone['ranges'])
-                except:
-                    return
 
     @staticmethod
     def onClientRaisedError(client: ArgosClient, error: Exception) -> None:
