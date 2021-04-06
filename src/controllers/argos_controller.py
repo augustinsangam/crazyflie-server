@@ -11,15 +11,13 @@ from typing import Any, List, Set, Union
 from src.clients.argos_client import ArgosClient
 from src.metaclasses.singleton import Singleton
 from src.models.connection import HandlerType
-from src.models.drone import Drone
+from src.models.drone import Drone, droneDiff
 from src.models.message import Message
 from src.models.mission import Vec2
 from src.services.communications import CommunicationService
 from src.services.drones_set import DronesSet
 from src.services.mission_handler import MissionHandler
 
-from json import encoder
-encoder.FLOAT_REPR = lambda o: format(o, '.3f')
 
 class ArgosController(metaclass=Singleton):
     TCP_HOST = '0.0.0.0'
@@ -144,23 +142,26 @@ class ArgosController(metaclass=Singleton):
             messages = list(filter(lambda x: x, messageStr.split('\n')))
             parsedMessages: List = list(map(lambda x: json.load(StringIO(x)), messages))
         except ValueError as e:
-            # logging.error(e)
-
-            #logging.error(
-             #   f'ARGoS client received a wrong json format : {messages}')
-            pass
+            logging.error(e)
+            logging.error(
+                f'ARGoS client received a wrong json format : {message}')
         else:
-            #logging.info(#"msg received")
-            #    f'ARGoS client received message : {messageStr}')
             for parsedMessage in parsedMessages:
                 if parsedMessage['type'] != 'pulse':
                     return
-                droneData: dict = parsedMessage['data']
-                droneData: dict = {**droneData, "real": False}
-                # Force ARGoS drone not to be real
-                drone = Drone(**droneData)
+
+                pulseData: dict = parsedMessage['data']
+                oldDrone = ArgosController.dronesSet.getDrone(pulseData['name'])
+                pulseData: dict = {**oldDrone, **pulseData, "real": False}
+
+                drone = Drone(**pulseData)
                 ArgosController.dronesSet.setDrone(drone['name'], drone)
-                CommunicationService().sendToDashboardController(parsedMessage)
+                CommunicationService().sendToDashboardController(
+                    Message(
+                        type="pulse",
+                        data=droneDiff(oldDrone, drone)
+                    )
+                )
 
                 try:
                     ArgosController.missionHandler.onReceivedPositionAndRange(
@@ -235,12 +236,12 @@ class ArgosController(metaclass=Singleton):
         fakeDronesSet.setDrone('Drone # 1',
                                Drone(name='Drone#1', speed=0, battery=0,
                                      position=[0, 0, 0], timestamp=0,
-                                     flying=True, ledOn=True, real=False,
+                                     state="exploring", ledOn=True, real=False,
                                      ranges=[0, 0, 0, 0], yaw=0))
         fakeDronesSet.setDrone('Drone # 2',
                                Drone(name='Drone#2', speed=0, battery=0,
                                      position=[0, 0, 0], timestamp=0,
-                                     flying=True, ledOn=True, real=False,
+                                     state="exploring", ledOn=True, real=False,
                                      ranges=[0, 0, 0, 0], yaw=0))
         ArgosController.missionHandler = MissionHandler(
             dronesSet=fakeDronesSet,
@@ -263,12 +264,11 @@ class ArgosController(metaclass=Singleton):
                     data={"name": drone}
                 )
             )
-        
+
         ArgosController.missionHandler = MissionHandler(
             dronesSet=ArgosController.dronesSet,
             missionType='argos',
-            sendMessageCallable=lambda
-                m: CommunicationService().sendToDashboardController(m)
+            sendMessageCallable=lambda m: CommunicationService().sendToDashboardController(m)
         )
 
     @staticmethod

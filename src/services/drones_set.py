@@ -2,7 +2,7 @@
 robot-handler.py
 Static class to manage robots and their states
 """
-from copy import copy
+from copy import copy, deepcopy
 from typing import Any, Dict, TypedDict, Union
 
 from src.models.drone import Drone
@@ -29,7 +29,7 @@ class DronesSet:
           @param key: the key witch identifies the drone.
         """
         if key in self.__drones:
-            return self.__drones[key]
+            return deepcopy(self.__drones[key])
         return None
 
     def findDroneByName(self, name: str) -> Union[None, DroneSearchReturn]:

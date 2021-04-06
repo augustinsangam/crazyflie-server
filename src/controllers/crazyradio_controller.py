@@ -3,8 +3,9 @@ import struct
 import subprocess
 import threading
 import time
+from collections import defaultdict
 from threading import Thread
-from typing import Any, List, Set, Union
+from typing import Any, List, Set, Union, Dict
 from enum import Enum, IntEnum
 
 import cflib.crtp
@@ -17,39 +18,41 @@ from src.services.mission_handler import MissionHandler
 from src.clients.crazyradio_client import CrazyradioClient
 from src.metaclasses.singleton import Singleton
 from src.models.connection import HandlerType
-from src.models.drone import Drone
+from src.models.drone import Drone, droneDiff
 from src.models.message import Message
 from src.services.communications import CommunicationService
 from src.services.drones_set import DronesSet
 from src.utils.timestamp import getTimestamp
 
-class PacketReceivedCode (IntEnum):
-    BATTERY=0
-    TIMESTAMP=1
-    SPEED=2
-    POSITION=3
-    SENSORS=4
-    OTHERS=5
 
-class PacketSentCode (IntEnum):
-    START_MISSION=0
-    END_MISSION=1
-    RETURN_TO_BASE=2
-    TAKE_OFF=3
-    LANDING=4
-    LED_ON=5
-    LED_OFF=6
+class PacketReceivedCode(IntEnum):
+    BATTERY = 0
+    TIMESTAMP = 1
+    SPEED = 2
+    POSITION = 3
+    SENSORS = 4
+    OTHERS = 5
+
+
+class PacketSentCode(IntEnum):
+    START_MISSION = 0
+    END_MISSION = 1
+    RETURN_TO_BASE = 2
+    TAKE_OFF = 3
+    LANDING = 4
+    LED_ON = 5
+    LED_OFF = 6
 
 
 class CrazyradioController(metaclass=Singleton):
     running = True
     dronesSet = DronesSet()
+    dronesMessageReceivedCount: Dict[str, int] = defaultdict(int)
     clients: Set[CrazyradioClient] = set()
     missionHandler: MissionHandler
     projectCurrentlyLoading = False
     FIRST_DRONE_ADDRESS = 0xE7E7E7E701
     MAX_DRONE_NUMBER = 2
-
 
     @staticmethod
     def launch() -> Thread:
@@ -164,7 +167,7 @@ class CrazyradioController(metaclass=Singleton):
             position=[0.0, 0.0, 0.0],
             yaw=0.0,
             ranges=[0, 0, 0, 0],
-            flying=False,
+            state="onTheGround",
             ledOn=False,
             real=True
         )
@@ -215,11 +218,12 @@ class CrazyradioController(metaclass=Singleton):
             (code,) = struct.unpack_from("<h", data, 0)
             print("le code en bas")
             print(code)
-            drone = CrazyradioController.dronesSet.getDrone(client.uri)
-            if not drone:
+            oldDrone = CrazyradioController.dronesSet.getDrone(client.uri)
+            if not oldDrone:
                 logging.error("Unknown drone received a message")
                 return
 
+            drone = CrazyradioController.dronesSet.getDrone(client.uri)
             if code == PacketReceivedCode.BATTERY:
                 (cd, battery) = struct.unpack("<hf", data)
                 print(f"Received : {cd}, {battery}")
@@ -257,8 +261,6 @@ class CrazyradioController(metaclass=Singleton):
                 print("Unknown code")
 
             CrazyradioController.dronesSet.setDrone(client.uri, drone)
-
-            # parsedMessage: Message = json.load(StringIO(message))
         except ValueError:
             logging.error(
                 f'Crazyradio client {droneIdentifier} receive a wrong struct '
@@ -279,12 +281,15 @@ class CrazyradioController(metaclass=Singleton):
             #     drone['yaw'],
             #     drone['ranges'][0:4]
             # )
-            CommunicationService().sendToDashboardController(
-                Message(
-                    type="pulse",
-                    data=drone
+            name: str = drone['name'] # noqa
+            CrazyradioController.dronesMessageReceivedCount[name] += 1
+            if CrazyradioController.dronesMessageReceivedCount[name] % 6 == 0:
+                CommunicationService().sendToDashboardController(
+                    Message(
+                        type="pulse",
+                        data=droneDiff(oldDrone, drone)
+                    )
                 )
-            )
 
     @staticmethod
     def onClientRaisedError(client: CrazyradioClient, error: Exception) -> None:
