@@ -14,7 +14,6 @@ from src.utils.timestamp import getTimestamp
 
 
 class MissionHandler:
-    RANGE_SCALE: float = 0.01
     MAX_DISTANCE = 0.21
     MIN_POINTS_DIST = 0.005
 
@@ -29,6 +28,7 @@ class MissionHandler:
           for demo purposes only. @param sendMessageCallable: the function to
           call to send mission pulses.
         """
+        self.RANGE_SCALE: float = (missionType == 'argos') * 0.01 + (missionType == 'crazyradio') * 0.001
         drones: List[Drone] = list(dronesSet.getDrones().values())
         if len(drones) == 0:
             logging.info("Mission rejected: no drones")
@@ -69,24 +69,20 @@ class MissionHandler:
         """
 
         points: List[Vec2] = []
-        xtemp = position['x']
-        position['x'] = position['y']
-        position['y'] = xtemp
+        if self.mission['type'] == 'argos':
+            xtemp = position['x']
+            position['x'] = position['y']
+            position['y'] = xtemp
         i = 0
-        absYaw = 0
-        if yaw < 0:
-            absYaw = math.pi + math.pi + yaw
-        else:
-            absYaw = yaw
         for r in ranges:
             if r > 65530:
                 i += 1
                 continue
             point = Vec2(
-                x=round(r * self.RANGE_SCALE * math.cos(absYaw +
-                                                        i * math.pi / 2) * -1 + position['x'], 4),
-                y=round(r * self.RANGE_SCALE * math.sin(absYaw +
-                                                        i * math.pi / 2) + position['y'], 4)
+                x=round(r * self.RANGE_SCALE * math.cos(yaw + i * math.pi / 2)
+                        * (-2 * (self.mission['type'] == 'argos') + 1) + position['x'], 4),
+                y=round(r * self.RANGE_SCALE * math.sin(yaw + i * math.pi / 2)
+                        + position['y'], 4)
             )
             if self.checkPointValidity((point['x'], point['y'])):
                 points.append(point)

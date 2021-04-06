@@ -23,6 +23,9 @@ def droneDiff(oldDrone: Drone, newDrone: Drone) -> dict:
     for oldAttribute in oldDrone:
         if oldDrone[oldAttribute] != newDrone[oldAttribute]:  # noqa
             diff[oldAttribute] = newDrone[oldAttribute]  # noqa
+    for newAttribute in newDrone:
+        if newAttribute not in oldDrone:  # noqa
+            diff[newAttribute] = newDrone[newAttribute]  # noqa
     diff['name'] = newDrone['name']
     diff['timestamp'] = newDrone['timestamp']
     return diff

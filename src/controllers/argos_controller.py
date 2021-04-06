@@ -152,6 +152,8 @@ class ArgosController(metaclass=Singleton):
 
                 pulseData: dict = parsedMessage['data']
                 oldDrone = ArgosController.dronesSet.getDrone(pulseData['name'])
+                if not oldDrone:
+                    oldDrone = {}
                 pulseData: dict = {**oldDrone, **pulseData, "real": False}
 
                 drone = Drone(**pulseData)
