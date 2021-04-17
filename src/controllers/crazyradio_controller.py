@@ -279,6 +279,8 @@ class CrazyradioController(metaclass=Singleton):
                         data['yaw'],
                         data['ranges'][:4]
                     )
+                    if CrazyradioController.missionHandler.checkMissionEnd():
+                        CrazyradioController.missionHandler = None
 
     @staticmethod
     def onClientRaisedError(client: CrazyradioClient, error: Exception) -> None:
@@ -299,10 +301,16 @@ class CrazyradioController(metaclass=Singleton):
         if message['type'] == 'startMission':
             missionRequestData: dict = message['data']
             if missionRequestData['type'] == 'crazyradio':
-                CrazyradioController.startMission()
+                CrazyradioController.startMission(missionRequestData['dronesPositions'])
         elif message['type'] == 'loadProject':
             loadProjectData = LoadProjectData(**message['data'])
             CrazyradioController.loadProject(loadProjectData)
+        elif message['type'] == 'returnToBase':
+            CrazyradioController.sendMessage(Message(type='returnToBase', data={'name':'*'}))
+        elif message['type'] == 'stopMission':
+            CrazyradioController.missionHandler.stopMission()
+            CrazyradioController.sendMessage(Message(type='stopMission', data={'name': '*'}))
+
 
     @staticmethod
     def sendMessage(message: Message) -> None:
@@ -347,7 +355,7 @@ class CrazyradioController(metaclass=Singleton):
         return drone['name'] if drone else uri
 
     @staticmethod
-    def startMission():
+    def startMission(initialDronePos: dict):
         """Start a mission. Order drones to takeoff and initialize a mission
         handler.
 
@@ -364,6 +372,7 @@ class CrazyradioController(metaclass=Singleton):
         CrazyradioController.missionHandler = MissionHandler(
             dronesSet=CrazyradioController.dronesSet,
             missionType='crazyradio',
+            initialDronePos=initialDronePos,
             sendMessageCallable=lambda
                 m: CommunicationService().sendToDashboardController(m)
         )

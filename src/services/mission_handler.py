@@ -15,9 +15,10 @@ from src.utils.timestamp import getTimestamp
 
 class MissionHandler:
     MAX_DISTANCE = 0.21
-    MIN_POINTS_DIST = 0.005
+    MIN_POINTS_DIST = 0.002
+    TAKE_OFF_DELAY = 20
 
-    def __init__(self, dronesSet: DronesSet, missionType: MissionType,
+    def __init__(self, dronesSet: DronesSet, missionType: MissionType, initialDronePos: dict,
                  sendMessageCallable: Callable[[Message], None]):
         """Initialize the mission handler. Reject the mission if the droneSet
         is empty. Gives random colors to the drones ins the droneSet. Save
@@ -36,6 +37,8 @@ class MissionHandler:
             sendMessageCallable(
                 Message(type='missionPulse', data={'status': status}))
             return
+        self.initialDronePos = initialDronePos
+        self.dronesSet = dronesSet
         self.sendMessageCallable = sendMessageCallable
         missionDrones: MissionDrones = {
             drone['name']: (
@@ -67,12 +70,13 @@ class MissionHandler:
           @param yaw: the angle of the drone in radiant.
           @param ranges: the list of ranges (front, left, back, right)
         """
-
         points: List[Vec2] = []
         if self.mission['type'] == 'argos':
             xtemp = position['x']
             position['x'] = position['y']
             position['y'] = xtemp
+        elif self.mission['type'] == 'crazyradio':
+            position['y'] = -position['y']
         i = 0
         for r in ranges:
             if r > 65530:
@@ -80,9 +84,9 @@ class MissionHandler:
                 continue
             point = Vec2(
                 x=round(r * self.RANGE_SCALE * math.cos(yaw + i * math.pi / 2)
-                        * (-2 * (self.mission['type'] == 'argos') + 1) + position['x'], 4),
+                        * (-2 * (self.mission['type'] == 'argos') + 1) + position['x'] + self.initialDronePos[droneName]['x'], 4),
                 y=round(r * self.RANGE_SCALE * math.sin(yaw + i * math.pi / 2)
-                        + position['y'], 4)
+                        + position['y'] + self.initialDronePos[droneName]['y'], 4)
             )
             if self.checkPointValidity((point['x'], point['y'])):
                 points.append(point)
@@ -110,17 +114,20 @@ class MissionHandler:
         """
         newMissionPoints = list(map(lambda point: MissionPoint(
             droneName=droneName, value=point), points))
-        missionPulse = MissionPulse(
-            id=self.mission['id'],
-            dronesPositions={droneName: position},
-            points=newMissionPoints
-        )
-        self.mission['dronesPositions'][droneName] = position
-        self.mission['dronesPaths'][droneName].append(position)
+        missionPulse = MissionPulse(id=self.mission['id'])
+        if newMissionPoints:
+            missionPulse['points'] = newMissionPoints
+        lastPos = self.mission['dronesPositions'][droneName]
+        if lastPos == [] or \
+                math.dist([lastPos['x'], lastPos['y']], [position['x'], position['y']]) > self.MIN_POINTS_DIST:
+            missionPulse['dronesPositions'] = {droneName: position}
+            self.mission['dronesPositions'][droneName] = position
+            self.mission['dronesPaths'][droneName].append(position)
         self.mission['points'] = [*self.mission['points'], *newMissionPoints]
         DatabaseService.saveMission(self.mission['id'], self.mission)
-        self.sendMessageCallable(
-            Message(type='missionPulse', data=missionPulse))
+        if len(missionPulse) > 1:
+            self.sendMessageCallable(
+                Message(type='missionPulse', data=missionPulse))
 
     def assignPointsToShapes(self):
         """Goes over all the point found during the mission and try to
@@ -172,16 +179,38 @@ class MissionHandler:
                 self.recursiveAddPointToShape(
                     missionPoints, list(nexPointsToAdd.values()), currentShape)
 
+    def checkMissionEnd(self) -> bool:
+        if getTimestamp() - self.mission['timestamp'] < self.TAKE_OFF_DELAY:
+            return False
+        drone: Drone
+        for drone in self.dronesSet.getDrones().values():
+            if drone['state'] != 'onTheGround' and drone['state'] != 'crashed':
+                return False
+
+        self.endMission()
+        return True
+
     def endMission(self):
         """End the mission. Save the ’done’ status to the database and inform
         the dashboards.
         """
-        self.assignPointsToShapes()
+        #self.assignPointsToShapes()
         status: MissionStatus = 'done'
         missionPulse = MissionPulse(
             id=self.mission['id'],
             status=status,
             shapes=self.mission['shapes']
+        )
+        self.mission['status'] = status
+        DatabaseService.saveMission(self.mission['id'], self.mission)
+        self.sendMessageCallable(
+            Message(type='missionPulse', data=missionPulse))
+
+    def stopMission(self):
+        status: MissionStatus = 'failed'
+        missionPulse = MissionPulse(
+            id=self.mission['id'],
+            status=status,
         )
         self.mission['status'] = status
         DatabaseService.saveMission(self.mission['id'], self.mission)
