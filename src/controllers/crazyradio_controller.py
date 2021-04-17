@@ -1,37 +1,36 @@
 import logging
+import math
 import struct
 import subprocess
 import threading
 import time
 from collections import defaultdict
+from enum import IntEnum
 from threading import Thread
 from typing import Any, List, Set, Union, Dict
-from enum import Enum, IntEnum
 
 import cflib.crtp
 from cflib.crtp.radiodriver import RadioManager
 
-from src.models.mission import Vec2
-from src.models.software_update import LoadProjectData, ProjectType, LogType, \
-    LoadProjectLog
-from src.services.mission_handler import MissionHandler
 from src.clients.crazyradio_client import CrazyradioClient
 from src.metaclasses.singleton import Singleton
 from src.models.connection import HandlerType
 from src.models.drone import Drone, droneDiff
 from src.models.message import Message
+from src.models.mission import Vec2
+from src.models.software_update import LoadProjectData, ProjectType, LogType, \
+    LoadProjectLog
 from src.services.communications import CommunicationService
 from src.services.drones_set import DronesSet
+from src.services.mission_handler import MissionHandler
 from src.utils.timestamp import getTimestamp
 
 
 class PacketReceivedCode(IntEnum):
     BATTERY = 0
-    TIMESTAMP = 1
-    SPEED = 2
-    POSITION = 3
-    SENSORS = 4
-    OTHERS = 5
+    SPEED = 1
+    POSITION_AND_SENSORS = 2
+    OTHERS = 3
 
 
 class PacketSentCode(IntEnum):
@@ -215,9 +214,7 @@ class CrazyradioController(metaclass=Singleton):
         droneIdentifier = CrazyradioController.getDroneIdentifier(client.uri)
         try:
 
-            (code,) = struct.unpack_from("<h", data, 0)
-            print("le code en bas")
-            print(code)
+            (code,) = struct.unpack_from("<B", data, 0)
             oldDrone = CrazyradioController.dronesSet.getDrone(client.uri)
             if not oldDrone:
                 logging.error("Unknown drone received a message")
@@ -225,42 +222,37 @@ class CrazyradioController(metaclass=Singleton):
 
             drone = CrazyradioController.dronesSet.getDrone(client.uri)
             if code == PacketReceivedCode.BATTERY:
-                (cd, battery) = struct.unpack("<hf", data)
-                print(f"Received : {cd}, {battery}")
+                (cd, battery) = struct.unpack("<Bf", data)
                 drone = {**drone, "battery": battery}
 
-            elif code == PacketReceivedCode.TIMESTAMP:
-                (cd, timestamp) = struct.unpack("<hQ", data)
-                print(f"Received : {cd}, {timestamp}")
-                drone = {**drone, "timestamp": getTimestamp()}
-
             elif code == PacketReceivedCode.SPEED:
-                (cd, speed) = struct.unpack("<hf", data)
-                print(f"Received : {cd}, {speed}")
+                (cd, speed) = struct.unpack("<Bf", data)
                 drone = {**drone, "speed": speed}
 
-            elif code == PacketReceivedCode.POSITION:
-                (cd, positionX, positionY, positionZ) = struct.unpack("<hfff",
-                                                                      data)
-                print(f"Received : {cd}, {positionX}, {positionY}, {positionZ}")
-                drone = {**drone, "position": [positionX, positionY, positionZ]}
-
-            elif code == PacketReceivedCode.SENSORS:
-                (cd, front, left, back, right, up) = struct.unpack("<hHHHHH",
-                                                                   data)
-                print(
-                    f"Received : {cd}, {front}, {left}, {back}, {right}, {up}")
-                drone = {**drone, "ranges": [front, left, back, right]}
+            elif code == PacketReceivedCode.POSITION_AND_SENSORS:
+                (cd, positionX, positionY, positionZ, yaw, front, left,
+                 back, right, up) = struct.unpack("<BffffHHHHH", data)
+                drone = {
+                    **drone,
+                    "position": [positionX, positionY, positionZ],
+                    "yaw": yaw * math.pi / 180,
+                    "ranges": [front, left, back, right]
+                }
 
             elif code == PacketReceivedCode.OTHERS:
-                (cd, flying, ledOn) = struct.unpack("<h??", data)
-                print(f"Received : {cd}, {flying}, {ledOn}")
-                drone = {**drone, "ledOn": ledOn, "flying": flying}
+                (cd, state, ledOn) = struct.unpack("<BB?", data)
+                drone = {
+                    **drone,
+                    "ledOn": ledOn,
+                    "flying": ["onTheGround", "takingOff", "landing", "crashed",
+                               "exploring", "standBy", "returningToBase"][state]
+                }
 
             else:
-                print("Unknown code")
+                logging.error("Drone received unknown code")
 
             CrazyradioController.dronesSet.setDrone(client.uri, drone)
+
         except ValueError:
             logging.error(
                 f'Crazyradio client {droneIdentifier} receive a wrong struct '
@@ -271,7 +263,7 @@ class CrazyradioController(metaclass=Singleton):
 
             name: str = drone['name']  # noqa
             CrazyradioController.dronesMessageReceivedCount[name] += 1
-            if CrazyradioController.dronesMessageReceivedCount[name] % 6 == 0:
+            if CrazyradioController.dronesMessageReceivedCount[name] % 4 == 0:
                 data = droneDiff(oldDrone, drone)
                 CommunicationService().sendToDashboardController(
                     Message(
@@ -285,7 +277,7 @@ class CrazyradioController(metaclass=Singleton):
                         Vec2(x=data['position'][0],
                              y=data['position'][1]),
                         data['yaw'],
-                        data['ranges'][0:4]
+                        data['ranges'][:4]
                     )
 
     @staticmethod
