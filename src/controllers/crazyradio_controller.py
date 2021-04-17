@@ -307,10 +307,13 @@ class CrazyradioController(metaclass=Singleton):
         if message['type'] == 'startMission':
             missionRequestData: dict = message['data']
             if missionRequestData['type'] == 'crazyradio':
-                CrazyradioController.startMission()
+                CrazyradioController.startMission(missionRequestData['dronesPositions'])
         elif message['type'] == 'loadProject':
             loadProjectData = LoadProjectData(**message['data'])
             CrazyradioController.loadProject(loadProjectData)
+        elif message['type'] == 'stopMission':
+            pass
+            #CrazyradioController.missionHandler.missionEnding = True
 
     @staticmethod
     def sendMessage(message: Message) -> None:
@@ -355,7 +358,7 @@ class CrazyradioController(metaclass=Singleton):
         return drone['name'] if drone else uri
 
     @staticmethod
-    def startMission():
+    def startMission(initialDronePos: dict):
         """Start a mission. Order drones to takeoff and initialize a mission
         handler.
 
@@ -372,6 +375,7 @@ class CrazyradioController(metaclass=Singleton):
         CrazyradioController.missionHandler = MissionHandler(
             dronesSet=CrazyradioController.dronesSet,
             missionType='crazyradio',
+            initialDronePos=initialDronePos,
             sendMessageCallable=lambda
                 m: CommunicationService().sendToDashboardController(m)
         )

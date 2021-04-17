@@ -10,6 +10,7 @@ class Message(TypedDict):
         'darken',
         'disconnect',
         'startMission',
+        'returnToBase',
         'mission',
         'missionPulse',
         'stopMission',
