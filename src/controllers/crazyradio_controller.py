@@ -287,6 +287,8 @@ class CrazyradioController(metaclass=Singleton):
                         data['yaw'],
                         data['ranges'][0:4]
                     )
+                    if CrazyradioController.missionHandler.checkMissionEnd():
+                        CrazyradioController.missionHandler = None
 
     @staticmethod
     def onClientRaisedError(client: CrazyradioClient, error: Exception) -> None:
@@ -311,9 +313,12 @@ class CrazyradioController(metaclass=Singleton):
         elif message['type'] == 'loadProject':
             loadProjectData = LoadProjectData(**message['data'])
             CrazyradioController.loadProject(loadProjectData)
+        elif message['type'] == 'returnToBase':
+            CrazyradioController.sendMessage(Message(type='returnToBase', data={'name':'*'}))
         elif message['type'] == 'stopMission':
-            pass
-            #CrazyradioController.missionHandler.missionEnding = True
+            CrazyradioController.missionHandler.stopMission()
+            CrazyradioController.sendMessage(Message(type='stopMission', data={'name': '*'}))
+
 
     @staticmethod
     def sendMessage(message: Message) -> None:
