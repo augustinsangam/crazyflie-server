@@ -46,7 +46,6 @@ class PacketSentCode(IntEnum):
 class CrazyradioController(metaclass=Singleton):
     running = True
     dronesSet = DronesSet()
-    dronesMessageReceivedCount: Dict[str, int] = defaultdict(int)
     clients: Set[CrazyradioClient] = set()
     missionHandler: MissionHandler = None
     projectCurrentlyLoading = False
@@ -160,16 +159,8 @@ class CrazyradioController(metaclass=Singleton):
         client.connect(uri)
         newDrone = Drone(
             name=uri,
-            timestamp=getTimestamp(),
-            speed=0.0,
-            battery=0,
-            position=[0.0, 0.0, 0.0],
-            yaw=0.0,
-            ranges=[0, 0, 0, 0],
-            state="onTheGround",
-            ledOn=False,
-            real=True
-        )
+            timestamp=getTimestamp()
+        ) # noqa
         CrazyradioController.dronesSet.setDrone(uri, newDrone)
 
     @staticmethod
@@ -251,6 +242,7 @@ class CrazyradioController(metaclass=Singleton):
             else:
                 logging.error("Drone received unknown code")
 
+            drone = {**drone, 'timestamp': getTimestamp(), 'real': True}
             CrazyradioController.dronesSet.setDrone(client.uri, drone)
 
         except ValueError:
@@ -262,25 +254,23 @@ class CrazyradioController(metaclass=Singleton):
                 f'Crazyradio client {droneIdentifier} received message : {data}')
 
             name: str = drone['name']  # noqa
-            CrazyradioController.dronesMessageReceivedCount[name] += 1
-            if CrazyradioController.dronesMessageReceivedCount[name] % 4 == 0:
-                data = droneDiff(oldDrone, drone)
-                CommunicationService().sendToDashboardController(
-                    Message(
-                        type="pulse",
-                        data=data
-                    )
+            data = droneDiff(oldDrone, drone)
+            CommunicationService().sendToDashboardController(
+                Message(
+                    type="pulse",
+                    data=data
                 )
-                if CrazyradioController.missionHandler is not None:
-                    CrazyradioController.missionHandler.onReceivedPositionAndRange(
-                        data['name'],
-                        Vec2(x=data['position'][0],
-                             y=data['position'][1]),
-                        data['yaw'],
-                        data['ranges'][:4]
-                    )
-                    if CrazyradioController.missionHandler.checkMissionEnd():
-                        CrazyradioController.missionHandler = None
+            )
+            if CrazyradioController.missionHandler is not None:
+                CrazyradioController.missionHandler.onReceivedPositionAndRange(
+                    drone['name'],
+                    Vec2(x=drone['position'][0],
+                         y=drone['position'][1]),
+                    drone['yaw'],
+                    drone['ranges'][:4]
+                )
+                if CrazyradioController.missionHandler.checkMissionEnd():
+                    CrazyradioController.missionHandler = None
 
     @staticmethod
     def onClientRaisedError(client: CrazyradioClient, error: Exception) -> None:
@@ -301,16 +291,24 @@ class CrazyradioController(metaclass=Singleton):
         if message['type'] == 'startMission':
             missionRequestData: dict = message['data']
             if missionRequestData['type'] == 'crazyradio':
-                CrazyradioController.startMission(missionRequestData['dronesPositions'])
+                CrazyradioController.startMission(
+                    {} if 'dronesPositions' not in missionRequestData else
+                    missionRequestData['dronesPositions']
+                )
+                if 'dronesPositions' not in missionRequestData:
+                    CrazyradioController.missionHandler = None
         elif message['type'] == 'loadProject':
             loadProjectData = LoadProjectData(**message['data'])
             CrazyradioController.loadProject(loadProjectData)
         elif message['type'] == 'returnToBase':
-            CrazyradioController.sendMessage(Message(type='returnToBase', data={'name':'*'}))
+            CrazyradioController.sendMessage(
+                Message(type='returnToBase', data={'name': '*'}))
         elif message['type'] == 'stopMission':
             CrazyradioController.missionHandler.stopMission()
-            CrazyradioController.sendMessage(Message(type='stopMission', data={'name': '*'}))
-
+            CrazyradioController.sendMessage(
+                Message(type='stopMission', data={'name': '*'}))
+        else:
+            CrazyradioController.sendMessage(message)
 
     @staticmethod
     def sendMessage(message: Message) -> None:
