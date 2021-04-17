@@ -1,7 +1,7 @@
-from typing import List, TypedDict, Literal
+from typing import List, Literal, TypedDict
 
 DroneState = Literal["onTheGround", "takingOff", "landing", "crashed",
-                     "exploring", "returningToBase"]
+                     "exploring", "standBy", "returningToBase"]
 
 
 class Drone(TypedDict):
@@ -29,4 +29,3 @@ def droneDiff(oldDrone: Drone, newDrone: Drone) -> dict:
     diff['name'] = newDrone['name']
     diff['timestamp'] = newDrone['timestamp']
     return diff
-
