@@ -6,6 +6,7 @@ from typing import Union, List
 from cflib.crazyflie import Crazyflie
 from src.models.connection import Connection, HandlerType
 from src.models.message import Message, MessageType
+from cflib.crtp.crtpstack import CRTPPort
 
 
 class CrazyradioClient:
@@ -23,6 +24,10 @@ class CrazyradioClient:
         """
         self.uri = droneUri
         self._cf = Crazyflie()
+
+        for port_callback in self._cf.incoming.cb:
+            if port_callback.port == CRTPPort.CONSOLE:
+                self._cf.incoming.cb.remove(port_callback)
 
         self._cf.connected.add_callback(
             lambda uri: self.connection.callAllCallbacks(HandlerType.connection))

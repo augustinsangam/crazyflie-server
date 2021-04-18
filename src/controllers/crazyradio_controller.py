@@ -1,10 +1,9 @@
 import logging
 import math
 import struct
-import subprocess
 import threading
 import time
-from collections import defaultdict
+
 from enum import IntEnum
 from threading import Thread
 from typing import Any, List, Set, Union, Dict
@@ -23,6 +22,7 @@ from src.models.software_update import LoadProjectData, ProjectType, LogType, \
 from src.services.communications import CommunicationService
 from src.services.drones_set import DronesSet
 from src.services.mission_handler import MissionHandler
+from src.services.project_loader import ProjectLoader
 from src.utils.timestamp import getTimestamp
 
 
@@ -52,12 +52,17 @@ class CrazyradioController(metaclass=Singleton):
     FIRST_DRONE_ADDRESS = 0xE7E7E7E701
     MAX_DRONE_NUMBER = 2
 
+    projectLoader: ProjectLoader
+
     @staticmethod
     def launch() -> Thread:
         """Launches a thread in witch the crazyradio controller will start,
         and return that thread.
 
         """
+        CrazyradioController.projectLoader = ProjectLoader(
+            CrazyradioController.sendLogToDashboard)
+
         thread = Thread(target=CrazyradioController.launchServer)
         thread.start()
         return thread
@@ -79,22 +84,23 @@ class CrazyradioController(metaclass=Singleton):
             return
 
         logging.info(f"Successfully connected to Crazyradio Dongle")
+        threading.Thread(target=CrazyradioController.findNewDrones).start()
 
-        interfaces = []
+    @staticmethod
+    def findNewDrones():
         while CrazyradioController.running:
-            interfaces = CrazyradioController.getAvailableInterfaces()
+            nDrones = len(CrazyradioController.dronesSet.getDrones())
+            if not CrazyradioController.projectCurrentlyLoading and \
+                    nDrones < CrazyradioController.MAX_DRONE_NUMBER:
+                interfaces = CrazyradioController.getAvailableInterfaces()
+                if len(interfaces) == 0 and \
+                        nDrones == 0:
+                    logging.warning(
+                        f'No drones found nearby. Retrying in 5 seconds.')
+                for interface in interfaces:
+                    CrazyradioController.handleClient(interface)
 
-            if len(interfaces) > 0:
-                break
-            logging.warning(
-                f'No drones found nearby. Retrying in 5 seconds.')
             time.sleep(5)
-
-        if not CrazyradioController.running:
-            return
-
-        for interface in interfaces:
-            CrazyradioController.handleClient(interface)
 
     @staticmethod
     def isDongleConnected() -> bool:
@@ -122,7 +128,14 @@ class CrazyradioController(metaclass=Singleton):
                 *available,
                 *cflib.crtp.scan_interfaces(address)
             ]
-        return available
+
+        allUris = set(client.uri for client in CrazyradioController.clients)
+        return list(
+            filter(
+                lambda interface: interface[0] not in allUris,
+                available
+            )
+        )
 
     @staticmethod
     def stopServer():
@@ -160,7 +173,7 @@ class CrazyradioController(metaclass=Singleton):
         newDrone = Drone(
             name=uri,
             timestamp=getTimestamp()
-        ) # noqa
+        )  # noqa
         CrazyradioController.dronesSet.setDrone(uri, newDrone)
 
     @staticmethod
@@ -182,12 +195,11 @@ class CrazyradioController(metaclass=Singleton):
         logging.info(f'Crazyradio client disconnected from uri {client.uri}')
         if CrazyradioController.running:
             CrazyradioController.clients.remove(client)
-            drone: Drone = CrazyradioController.dronesSet.getDrone(client.uri)
             CommunicationService().sendToDashboardController(
                 Message(
                     type="disconnect",
                     data={
-                        "name": drone['name']
+                        "name": client.uri
                     }
                 )
             )
@@ -280,7 +292,7 @@ class CrazyradioController(metaclass=Singleton):
           @param error: the exception  raised by the client.
         """
         logging.info(
-            f'ARGoS Crazyradio connected on uri {client.uri} raised an error:\n{error}')
+            f'Crazyradio connected on uri {client.uri} raised an error:\n{error}')
 
     @staticmethod
     def onControllerReceivedMessage(message: Message):
@@ -389,15 +401,6 @@ class CrazyradioController(metaclass=Singleton):
         CrazyradioController.missionHandler.endMission()
 
     @staticmethod
-    def cloadAll(uris: List[str], cf2_bin: str):
-        for uri in uris:
-            logMessage = f'Flashing drone at uri {uri}'
-            logging.critical(logMessage)
-            CrazyradioController.sendLogToDashboard('info', logMessage)
-            subprocess.call(['python3', '-m', 'cfloader', 'flash',
-                             cf2_bin, 'stm32-fw', '-w', uri])
-
-    @staticmethod
     def sendLogToDashboard(logType: LogType, log: str):
         message = Message(
             type='loadProjectLog',
@@ -426,7 +429,13 @@ class CrazyradioController(metaclass=Singleton):
 
     @staticmethod
     def loadProjectThread(projectType: ProjectType, code=None):
-        # TODO
-        logging.info(f'Loafing {projectType} with code {code}')
+        if CrazyradioController.projectLoader.setup(projectType, code):
+            clinks = list(CrazyradioController.dronesSet.getDrones().keys())
+            for client in set(CrazyradioController.clients):
+                client.closeClient()
+            CrazyradioController.projectLoader.flash(clinks)
+            time.sleep(1)
+            CrazyradioController.sendLogToDashboard(
+                'info', 'About to reconnect to newly flashed drones...')
         # At the end
         CrazyradioController.projectCurrentlyLoading = False
