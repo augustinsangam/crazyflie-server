@@ -197,9 +197,11 @@ class ArgosController(metaclass=Singleton):
                 ArgosController.startFakeMission()
             elif missionRequestData['type'] == 'argos':
                 initialDronesPos = {}
+                offsetDronePos = {}
                 for drone in ArgosController.dronesSet.getDrones().values():
                     initialDronesPos[drone['name']] = Vec2(x=drone['position'][0], y=drone['position'][1])
-                ArgosController.startMission(initialDronesPos)
+                    offsetDronePos[drone['name']] = Vec2(x=0, y=0)
+                ArgosController.startMission(initialDronesPos, offsetDronePos)
                 if ArgosController.missionHandler.mission['status'] == 'inProgress':
                     for drone in ArgosController.dronesSet.getDrones().values():
                         ArgosController.sendMessage(Message(type='startMission', data={'name': drone['name']}))
