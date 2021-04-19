@@ -13,12 +13,16 @@ from src.utils.css_predifined_colors import CSS_PREDEFINED_COLORS
 from src.utils.timestamp import getTimestamp
 
 
+
+
 class MissionHandler:
     MAX_DISTANCE = 0.21
     MIN_POINTS_DIST = 0.002
     TAKE_OFF_DELAY = 20
+    CRAZYRADIO_MAX_RANGE = 500
+    ARGOS_MAX_RANGE = 65530
 
-    def __init__(self, dronesSet: DronesSet, missionType: MissionType, initialDronePos: dict,
+    def __init__(self, dronesSet: DronesSet, missionType: MissionType, initialDronePos: dict, offsetDronePos: dict,
                  sendMessageCallable: Callable[[Message], None]):
         """Initialize the mission handler. Reject the mission if the droneSet
         is empty. Gives random colors to the drones ins the droneSet. Save
@@ -38,6 +42,7 @@ class MissionHandler:
                 Message(type='missionPulse', data={'status': status}))
             return
         self.initialDronePos = initialDronePos
+        self.offsetDronePos = offsetDronePos
         self.dronesSet = dronesSet
         self.sendMessageCallable = sendMessageCallable
         missionDrones: MissionDrones = {
@@ -78,15 +83,18 @@ class MissionHandler:
         elif self.mission['type'] == 'crazyradio':
             position['y'] = -position['y']
         i = 0
+        maxRange = ((self.mission['type'] == 'argos') * self.ARGOS_MAX_RANGE
+                 + (self.mission['type'] == 'crazyradio') * self.CRAZYRADIO_MAX_RANGE)
         for r in ranges:
-            if r > 65530:
+            if r > maxRange:
                 i += 1
                 continue
             point = Vec2(
                 x=round(r * self.RANGE_SCALE * math.cos(yaw + i * math.pi / 2)
-                        * (-2 * (self.mission['type'] == 'argos') + 1) + position['x'] + self.initialDronePos[droneName]['x'], 4),
+                        * (-2 * (self.mission['type'] == 'argos') + 1) + position['x']
+                        + self.offsetDronePos[droneName]['x'] - self.initialDronePos[droneName]['x'], 4),
                 y=round(r * self.RANGE_SCALE * math.sin(yaw + i * math.pi / 2)
-                        + position['y'] + self.initialDronePos[droneName]['y'], 4)
+                        + position['y'] + self.offsetDronePos[droneName]['y'] - self.initialDronePos[droneName]['y'], 4)
             )
             if self.checkPointValidity((point['x'], point['y'])):
                 points.append(point)

@@ -312,10 +312,12 @@ class CrazyradioController(metaclass=Singleton):
         if message['type'] == 'startMission':
             missionRequestData: dict = message['data']
             if missionRequestData['type'] == 'crazyradio':
-                CrazyradioController.startMission(
-                    {} if 'dronesPositions' not in missionRequestData else
-                    missionRequestData['dronesPositions']
-                )
+                initialDronesPos = {}
+                offsetDronePos = {} if 'dronesPositions' not in missionRequestData \
+                    else missionRequestData['dronesPositions']
+                for drone in CrazyradioController.dronesSet.getDrones().values():
+                    initialDronesPos[drone['name']] = Vec2(x=drone['position'][0], y=drone['position'][1])
+                CrazyradioController.startMission(initialDronesPos, offsetDronePos)
                 if 'dronesPositions' not in missionRequestData:
                     CrazyradioController.missionHandler = None
         elif message['type'] == 'loadProject':
