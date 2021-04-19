@@ -9,7 +9,7 @@ from threading import Thread
 from typing import Any, List, Set, Union, Dict
 
 import cflib.crtp
-from cflib.crtp.radiodriver import RadioManager
+from cflib.crtp.radiodriver import RadioManager  # noqa
 
 from src.clients.crazyradio_client import CrazyradioClient
 from src.metaclasses.singleton import Singleton
@@ -75,7 +75,8 @@ class CrazyradioController(metaclass=Singleton):
 
         """
         cflib.crtp.init_drivers(enable_debug_driver=False)
-        while not CrazyradioController.isDongleConnected() and CrazyradioController.running:
+        while not CrazyradioController.isDongleConnected() and \
+            CrazyradioController.running:
             logging.warning(
                 'Crazyradio PA dongle is not connected. Retrying in 5 seconds.')
             time.sleep(5)
@@ -91,10 +92,10 @@ class CrazyradioController(metaclass=Singleton):
         while CrazyradioController.running:
             nDrones = len(CrazyradioController.dronesSet.getDrones())
             if not CrazyradioController.projectCurrentlyLoading and \
-                    nDrones < CrazyradioController.MAX_DRONE_NUMBER:
+                nDrones < CrazyradioController.MAX_DRONE_NUMBER:
                 interfaces = CrazyradioController.getAvailableInterfaces()
                 if len(interfaces) == 0 and \
-                        nDrones == 0:
+                    nDrones == 0:
                     logging.warning(
                         f'No drones found nearby. Retrying in 5 seconds.')
                 for interface in interfaces:
@@ -111,7 +112,7 @@ class CrazyradioController(metaclass=Singleton):
         try:
             crazyradioDriver.open(0)
             return True
-        except:
+        except:  # noqa
             return False
 
     @staticmethod
@@ -168,13 +169,7 @@ class CrazyradioController(metaclass=Singleton):
                 handlerFunc,
                 client
             )
-        uri: str = interface[0]
-        client.connect(uri)
-        newDrone = Drone(
-            name=uri,
-            timestamp=getTimestamp()
-        )  # noqa
-        CrazyradioController.dronesSet.setDrone(uri, newDrone)
+        client.connect(interface[0])
 
     @staticmethod
     def onClientConnect(client: CrazyradioClient) -> None:
@@ -183,6 +178,17 @@ class CrazyradioController(metaclass=Singleton):
           @param client: the client witch called the function.
         """
         logging.info(f'New Crazyradio client connected on uri {client.uri}')
+        newDrone = Drone(
+            name=client.uri,
+            timestamp=getTimestamp()
+        )  # noqa
+        CrazyradioController.dronesSet.setDrone(client.uri, newDrone)
+        CommunicationService().sendToDashboardController(
+            Message(
+                type="pulse",
+                data=newDrone
+            )
+        )
 
     @staticmethod
     def onClientDisconnect(client: CrazyradioClient) -> None:
@@ -220,41 +226,46 @@ class CrazyradioController(metaclass=Singleton):
             (code,) = struct.unpack_from("<B", data, 0)
             oldDrone = CrazyradioController.dronesSet.getDrone(client.uri)
             if not oldDrone:
-                logging.error("Unknown drone received a message")
+                CrazyradioController.dronesSet.setDrone(
+                    client.uri, Drone(**{'name': client.uri}))
                 return
 
+            drone: Drone
             drone = CrazyradioController.dronesSet.getDrone(client.uri)
             if code == PacketReceivedCode.BATTERY:
                 (cd, battery) = struct.unpack("<Bf", data)
-                drone = {**drone, "battery": battery}
+                drone = Drone(**{**drone, "battery": battery})
 
             elif code == PacketReceivedCode.SPEED:
                 (cd, speed) = struct.unpack("<Bf", data)
-                drone = {**drone, "speed": speed}
+                drone = Drone(**{**drone, "speed": speed})
 
             elif code == PacketReceivedCode.POSITION_AND_SENSORS:
                 (cd, positionX, positionY, positionZ, yaw, front, left,
                  back, right, up) = struct.unpack("<BffffHHHHH", data)
-                drone = {
+                drone = Drone(**{
                     **drone,
                     "position": [positionX, positionY, positionZ],
                     "yaw": yaw * math.pi / 180,
                     "ranges": [front, left, back, right]
-                }
+                })
 
             elif code == PacketReceivedCode.OTHERS:
                 (cd, state, ledOn) = struct.unpack("<BB?", data)
-                drone = {
+                logging.error((cd, state, ledOn))
+                drone = Drone(**{
                     **drone,
                     "ledOn": ledOn,
-                    "flying": ["onTheGround", "takingOff", "landing", "crashed",
+                    "state": ["onTheGround", "takingOff", "landing", "crashed",
                                "exploring", "standBy", "returningToBase"][state]
-                }
+                })
 
             else:
                 logging.error("Drone received unknown code")
 
-            drone = {**drone, 'timestamp': getTimestamp(), 'real': True}
+            drone = Drone(
+                **{**drone, 'timestamp': getTimestamp(), 'real': True})
+
             CrazyradioController.dronesSet.setDrone(client.uri, drone)
 
         except ValueError:
@@ -265,17 +276,15 @@ class CrazyradioController(metaclass=Singleton):
             logging.debug(
                 f'Crazyradio client {droneIdentifier} received message : {data}')
 
-            name: str = drone['name']  # noqa
-            data = droneDiff(oldDrone, drone)
             CommunicationService().sendToDashboardController(
                 Message(
                     type="pulse",
-                    data=data
+                    data=droneDiff(oldDrone, drone)
                 )
             )
             if CrazyradioController.missionHandler is not None:
                 CrazyradioController.missionHandler.onReceivedPositionAndRange(
-                    drone['name'],
+                    client.uri,
                     Vec2(x=drone['position'][0],
                          y=drone['position'][1]),
                     drone['yaw'],
