@@ -252,12 +252,11 @@ class CrazyradioController(metaclass=Singleton):
 
             elif code == PacketReceivedCode.OTHERS:
                 (cd, state, ledOn) = struct.unpack("<BB?", data)
-                logging.error((cd, state, ledOn))
                 drone = Drone(**{
                     **drone,
                     "ledOn": ledOn,
                     "state": ["onTheGround", "takingOff", "landing", "crashed",
-                               "exploring", "standBy", "returningToBase"][state]
+                              "exploring", "standBy", "returningToBase"][state]
                 })
 
             else:
@@ -440,11 +439,16 @@ class CrazyradioController(metaclass=Singleton):
     def loadProjectThread(projectType: ProjectType, code=None):
         if CrazyradioController.projectLoader.setup(projectType, code):
             clinks = list(CrazyradioController.dronesSet.getDrones().keys())
-            for client in set(CrazyradioController.clients):
-                client.closeClient()
-            CrazyradioController.projectLoader.flash(clinks)
-            time.sleep(1)
-            CrazyradioController.sendLogToDashboard(
-                'info', 'About to reconnect to newly flashed drones...')
+            crazyradioClients = set(CrazyradioController.clients)
+            if len(crazyradioClients) == 0:
+                CrazyradioController.sendLogToDashboard(
+                    'error', 'No drone to flash...')
+            else:
+                for client in crazyradioClients:
+                    client.closeClient()
+                CrazyradioController.projectLoader.flash(clinks)
+                time.sleep(1)
+                CrazyradioController.sendLogToDashboard(
+                    'info', 'About to reconnect to newly flashed drones...')
         # At the end
         CrazyradioController.projectCurrentlyLoading = False
