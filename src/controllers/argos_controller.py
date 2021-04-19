@@ -270,7 +270,7 @@ class ArgosController(metaclass=Singleton):
         Thread(target=ArgosController.simulateFakeMission).start()
 
     @staticmethod
-    def startMission(initialDronePos: dict):
+    def startMission(initialDronePos: dict, offsetDronePos: dict):
         """Start a mission. Order drones to takeoff and initialize a mission
         handler.
 
@@ -288,6 +288,7 @@ class ArgosController(metaclass=Singleton):
             dronesSet=ArgosController.dronesSet,
             missionType='argos',
             initialDronePos=initialDronePos,
+            offsetDronePos=offsetDronePos,
             sendMessageCallable=lambda m: CommunicationService().sendToDashboardController(m)
         )
 

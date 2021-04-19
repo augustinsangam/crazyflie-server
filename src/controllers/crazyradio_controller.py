@@ -209,7 +209,8 @@ class CrazyradioController(metaclass=Singleton):
                     }
                 )
             )
-            CrazyradioController.dronesSet.removeDrone(client.uri)
+            # Keep the drone last state
+            # CrazyradioController.dronesSet.removeDrone(client.uri)
 
     @staticmethod
     def onClientReceivedMessage(client: CrazyradioClient, data) -> None:
@@ -375,7 +376,7 @@ class CrazyradioController(metaclass=Singleton):
         return drone['name'] if drone else uri
 
     @staticmethod
-    def startMission(initialDronePos: dict):
+    def startMission(initialDronePos: dict, offsetDronePos: dict):
         """Start a mission. Order drones to takeoff and initialize a mission
         handler.
 
@@ -393,6 +394,7 @@ class CrazyradioController(metaclass=Singleton):
             dronesSet=CrazyradioController.dronesSet,
             missionType='crazyradio',
             initialDronePos=initialDronePos,
+            offsetDronePos=offsetDronePos,
             sendMessageCallable=lambda
                 m: CommunicationService().sendToDashboardController(m)
         )
