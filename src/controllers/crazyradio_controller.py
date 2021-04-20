@@ -333,6 +333,7 @@ class CrazyradioController(metaclass=Singleton):
                 CrazyradioController.missionHandler.stopMission()
                 CrazyradioController.sendMessage(
                     Message(type='stopMission', data={'name': '*'}))
+                CrazyradioController.missionHandler = None
         else:
             CrazyradioController.sendMessage(message)
 

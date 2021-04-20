@@ -214,6 +214,7 @@ class ArgosController(metaclass=Singleton):
                 ArgosController.missionHandler.stopMission()
                 for drone in ArgosController.dronesSet.getDrones().values():
                     ArgosController.sendMessage(Message(type='stopMission', data={'name': drone['name']}))
+                ArgosController.missionHandler = None
 
     @staticmethod
     def sendMessage(message: Message) -> None:
