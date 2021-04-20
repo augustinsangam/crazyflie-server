@@ -166,6 +166,8 @@ class DashboardController(metaclass=Singleton):
     def onControllerReceivedMessage(message: Message):
         """TODO"""
         for client in DashboardController.clients:
+            if client.socket is None or client.socket.closed:
+                continue
             DashboardController.sendMessageToSocket(client.socket, message)
 
     @staticmethod

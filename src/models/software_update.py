@@ -1,7 +1,7 @@
 from typing import TypedDict, Literal
 
 ProjectType = Literal['cdr', 'rr', 'sandbox']
-LogType = Literal['info', 'error', 'success']
+LogType = Literal['info', 'error', 'success', 'warning']
 
 
 class LoadProjectData(TypedDict):
@@ -12,3 +12,4 @@ class LoadProjectData(TypedDict):
 class LoadProjectLog(TypedDict):
     type: LogType
     log: str
+    timestamp: int

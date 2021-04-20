@@ -60,8 +60,7 @@ class CrazyradioController(metaclass=Singleton):
         and return that thread.
 
         """
-        CrazyradioController.projectLoader = ProjectLoader(
-            CrazyradioController.sendLogToDashboard)
+        CrazyradioController.projectLoader = ProjectLoader()
 
         thread = Thread(target=CrazyradioController.launchServer)
         thread.start()

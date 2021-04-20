@@ -8,7 +8,8 @@ from src.models.message import Message
 class CommunicationService(metaclass=Singleton):
 
     def __init__(self):
-        """Initialyze the communication service. The controllers are set to None because theire object do not exists yet.
+        """Initialize the communication service. The controllers are set to
+        None because their object do not exists yet.
         """
         self.dashboardController = None
         self.argosController = None
@@ -44,7 +45,7 @@ class CommunicationService(metaclass=Singleton):
         self.crazyradioController.onControllerReceivedMessage(message)
 
     def getAllDrones(self) -> List[Drone]:
-        """Get all the drone saved acros the argos and crazyradio controller.
+        """Get all the drone saved across the argos and crazyradio controller.
         """
         return list(self.argosController.dronesSet.getDrones().values()) +\
             list(self.crazyradioController.dronesSet.getDrones().values())

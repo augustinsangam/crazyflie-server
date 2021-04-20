@@ -1,5 +1,6 @@
 import logging
 from threading import Thread
+from typing import Optional
 
 from flask_threaded_sockets.websocket import WebSocket
 from src.models.connection import Connection, HandlerType
@@ -8,7 +9,7 @@ from src.models.connection import Connection, HandlerType
 class DashboardClient:
 
     def __init__(self) -> None:
-        self.socket = None
+        self.socket: Optional[WebSocket] = None
         self.thread = None
         self.connection = Connection()
 

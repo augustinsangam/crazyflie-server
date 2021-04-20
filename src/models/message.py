@@ -13,7 +13,7 @@ MessageType = Literal[
     'missionPulse',
     'stopMission',
     'loadProject',
-    'loadProjectLog'
+    'loadProjectLog',
 ]
 
 
