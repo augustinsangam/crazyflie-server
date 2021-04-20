@@ -79,7 +79,7 @@ To generate the project's documentation :
   make
   make install
   ```
-* Once in a while, run Doxygen. Make sure you are in the root directory of the project (`/drone`)
+* Once in a while, run Doxygen. Make sure you are in the root directory of the project (`/server`)
   ```bash
   doxygen doc/doxygen-config
   ```

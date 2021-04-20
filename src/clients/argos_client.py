@@ -12,21 +12,23 @@ class ArgosClient:
         self.connection = Connection()
 
     def connect(self, webSocket: WebSocket) -> None:
-        """Assing the client to the specified websocket and start a thread to handle the communication.
+        """Assign the client to the specified websocket and start a thread to
+        handle the communication.
 
-          @param websocket: the socket on witch the client is connected.
+          @param webSocket: the socket on witch the client is connected.
         """
         self.socket = webSocket
         Thread(target=self.handleCommunications).start()
 
     def handleCommunications(self):
-        """Listen on the socket for messages. It closes the client if it receive an empty string.
+        """Listen on the socket for messages. It closes the client if it
+        receive an empty string.
 
         """
         self.connection.callAllCallbacks(HandlerType.connection)
         try:
             while True:
-                message = self.socket.recv(1024)
+                message = self.socket.recv(2048)
                 if message == b'':
                     self.socket.close()
                     break

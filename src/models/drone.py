@@ -1,13 +1,31 @@
-from typing import List, TypedDict
+from typing import List, Literal, TypedDict
+
+DroneState = Literal["onTheGround", "takingOff", "landing", "crashed",
+                     "exploring", "standBy", "returningToBase"]
 
 
 class Drone(TypedDict):
     name: str
+    timestamp: int
     speed: float
     battery: float
     position: List[float]
-    multiRange: List[int]
+    yaw: float
+    ranges: List[int]
     timestamp: int
-    flying: bool
+    state: DroneState
     ledOn: bool
     real: bool
+
+
+def droneDiff(oldDrone: Drone, newDrone: Drone) -> dict:
+    diff = {}
+    for oldAttribute in oldDrone:
+        if oldDrone[oldAttribute] != newDrone[oldAttribute]:  # noqa
+            diff[oldAttribute] = newDrone[oldAttribute]  # noqa
+    for newAttribute in newDrone:
+        if newAttribute not in oldDrone:  # noqa
+            diff[newAttribute] = newDrone[newAttribute]  # noqa
+    diff['name'] = newDrone['name']
+    diff['timestamp'] = newDrone['timestamp']
+    return diff

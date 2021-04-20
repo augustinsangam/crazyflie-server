@@ -1,5 +1,6 @@
 import logging
 from threading import Thread
+from typing import Optional
 
 from flask_threaded_sockets.websocket import WebSocket
 from src.models.connection import Connection, HandlerType
@@ -8,12 +9,13 @@ from src.models.connection import Connection, HandlerType
 class DashboardClient:
 
     def __init__(self) -> None:
-        self.socket = None
+        self.socket: Optional[WebSocket] = None
         self.thread = None
         self.connection = Connection()
 
     def connect(self, socket) -> None:
-        """Assigning the client to the specified socket and start a thread to handle the communication.
+        """Assigning the client to the specified socket and start a thread to
+        handle the communication.
 
           @param socket: the socket on witch the client is connected.
         """
@@ -22,7 +24,7 @@ class DashboardClient:
         self.thread.start()
 
     def handleCommunications(self) -> None:
-        """Listen for message on the socket while the connection is active. 
+        """Listen for message on the socket while the connection is active.
 
         """
         self.connection.callAllCallbacks(HandlerType.connection)
@@ -39,7 +41,7 @@ class DashboardClient:
             self.connection.callAllCallbacks(HandlerType.disconnection)
 
     def closeClient(self):
-        """Force close the connection. Called by the sigint handler. 
+        """Force close the connection. Called by the sigint handler.
 
         """
         self.socket.__del__()

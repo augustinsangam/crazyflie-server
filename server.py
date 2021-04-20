@@ -1,24 +1,16 @@
 #!/usr/bin/env python3
 
 import logging
-import pathlib
 import signal
-import sys
-from models.mission import MissionPulse
 
-# Launch server in server/ folder
-sys.path.insert(
-    0, 
-    pathlib.Path(__file__).parent.parent.absolute().__str__()
-)
-
-# Now imports works
 from src.controllers.argos_controller import ArgosController
 from src.controllers.crazyradio_controller import CrazyradioController
 from src.controllers.dashboard_controller import DashboardController
 from src.services.communications import CommunicationService
 from src.utils.setup_logging import setupLogging
-from services.database import DatabaseService
+from src.services.database import DatabaseService
+from src.models.mission import MissionPulse
+
 
 def exitHandler(sig, frame):
     logging.info('Closing server application')
@@ -27,8 +19,14 @@ def exitHandler(sig, frame):
     DashboardController.stopServer()
 
 
-if __name__ == '__main__':
+def failAllNotCompletedMissions():
+    for mission in missions:
+        if mission['status'] == 'inProgress':
+            missionPulse = MissionPulse(id=mission['id'], status='failed')
+            DatabaseService.saveMission(missionPulse['id'], missionPulse)
 
+
+if __name__ == '__main__':
     # Some initializations
     setupLogging()
 
@@ -46,14 +44,9 @@ if __name__ == '__main__':
 
     # Terminate any in progress missions
     missions = DatabaseService.getAllMissions()
-    
-    for mission in missions:
-        if mission['status'] == 'inProgress':
-            missionPulse = MissionPulse(
-                id=mission['id'],
-                status='failed'
-            )
-            DatabaseService.saveMission(missionPulse['id'], missionPulse)
+
+    # Make sure to not have any not completed mission
+    failAllNotCompletedMissions()
 
     # Crazyradio Controller
     crazyradioControllerThread = CrazyradioController().launch()
