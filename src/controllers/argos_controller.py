@@ -210,9 +210,10 @@ class ArgosController(metaclass=Singleton):
             for drone in ArgosController.dronesSet.getDrones().values():
                 ArgosController.sendMessage(Message(type='returnToBase', data={'name': drone['name']}))
         elif message['type'] == 'stopMission':
-            ArgosController.missionHandler.stopMission()
-            for drone in ArgosController.dronesSet.getDrones().values():
-                ArgosController.sendMessage(Message(type='stopMission', data={'name': drone['name']}))
+            if ArgosController.missionHandler is not None:
+                ArgosController.missionHandler.stopMission()
+                for drone in ArgosController.dronesSet.getDrones().values():
+                    ArgosController.sendMessage(Message(type='stopMission', data={'name': drone['name']}))
 
     @staticmethod
     def sendMessage(message: Message) -> None:

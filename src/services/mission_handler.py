@@ -43,6 +43,8 @@ class MissionHandler:
             return
         self.initialDronePos = initialDronePos
         self.offsetDronePos = offsetDronePos
+        logging.error(f"Initial {initialDronePos}")
+        logging.error(f"Offset {offsetDronePos}")
         self.dronesSet = dronesSet
         self.sendMessageCallable = sendMessageCallable
         missionDrones: MissionDrones = {
@@ -80,6 +82,10 @@ class MissionHandler:
 
         realYaw = yaw
         points: List[Vec2] = []
+
+        position['x'] -= self.initialDronePos[droneName]['x']
+        position['y'] -= self.initialDronePos[droneName]['y']
+
         if self.mission['type'] == 'argos':
             xtemp = position['x']
             position['x'] = position['y']
@@ -90,8 +96,8 @@ class MissionHandler:
             position['y'] = - xtemp
             realYaw = yaw + math.pi / 4
 
-        xPos = position['x'] + self.offsetDronePos[droneName]['x'] - self.initialDronePos[droneName]['x']
-        yPos = position['x'] + self.offsetDronePos[droneName]['y'] - self.initialDronePos[droneName]['y']
+        xPos = position['x'] + self.offsetDronePos[droneName]['x']
+        yPos = position['y'] + self.offsetDronePos[droneName]['y']
 
         i = 0
         for r in ranges:
@@ -227,7 +233,7 @@ class MissionHandler:
         missionPulse = MissionPulse(
             id=self.mission['id'],
             status=status,
-        )
+        ) # noqa
         self.mission['status'] = status
         DatabaseService.saveMission(self.mission['id'], self.mission)
         self.sendMessageCallable(

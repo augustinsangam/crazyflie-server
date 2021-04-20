@@ -56,7 +56,7 @@ class CrazyradioClient:
 
         allPossibleCommands: List[str] = [
             'startMission',
-            'endMission',
+            'stopMission',
             'returnToBase',
             'takeOff',
             'land',
@@ -66,7 +66,7 @@ class CrazyradioClient:
         try:
             command = allPossibleCommands.index(message['type'])
             if command < len(allPossibleCommands):
-                self._cf.appchannel.send_packet(struct.pack("<i", command))
+                self._cf.appchannel.send_packet(struct.pack("<B", command))
         except ValueError:
             logging.error(
                 f'Crazyradio got unrecognized command to send : {message}')

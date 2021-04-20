@@ -327,9 +327,12 @@ class CrazyradioController(metaclass=Singleton):
             CrazyradioController.sendMessage(
                 Message(type='returnToBase', data={'name': '*'}))
         elif message['type'] == 'stopMission':
-            CrazyradioController.missionHandler.stopMission()
-            CrazyradioController.sendMessage(
-                Message(type='stopMission', data={'name': '*'}))
+            # TODO : Remove
+            logging.info(f'Stopping mission {message}')
+            if CrazyradioController.missionHandler is not None:
+                CrazyradioController.missionHandler.stopMission()
+                CrazyradioController.sendMessage(
+                    Message(type='stopMission', data={'name': '*'}))
         else:
             CrazyradioController.sendMessage(message)
 
