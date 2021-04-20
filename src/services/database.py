@@ -40,4 +40,4 @@ class DatabaseService(metaclass=Singleton):
             missionQuery = Query()
             table.upsert(mission, missionQuery.id == missionId)
         except:
-            logging.log('Error while saving in the DB')
+            logging.error('Error while saving in the DB')
