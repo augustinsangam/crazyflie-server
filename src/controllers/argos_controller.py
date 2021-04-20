@@ -193,15 +193,13 @@ class ArgosController(metaclass=Singleton):
         """
         if message['type'] == 'startMission':
             missionRequestData: dict = message['data']
-            if missionRequestData['type'] == 'fake':
-                ArgosController.startFakeMission()
-            elif missionRequestData['type'] == 'argos':
-                initialDronesPos = {}
+            if missionRequestData['type'] == 'argos':
+                initialDronePos = {}
                 offsetDronePos = {}
                 for drone in ArgosController.dronesSet.getDrones().values():
-                    initialDronesPos[drone['name']] = Vec2(x=drone['position'][0], y=drone['position'][1])
+                    initialDronePos[drone['name']] = Vec2(x=drone['position'][0], y=drone['position'][1])
                     offsetDronePos[drone['name']] = Vec2(x=0, y=0)
-                ArgosController.startMission(initialDronesPos, offsetDronePos)
+                ArgosController.startMission(initialDronePos, offsetDronePos)
                 if ArgosController.missionHandler.mission['status'] == 'inProgress':
                     for drone in ArgosController.dronesSet.getDrones().values():
                         ArgosController.sendMessage(Message(type='startMission', data={'name': drone['name']}))
@@ -249,29 +247,6 @@ class ArgosController(metaclass=Singleton):
         return drone['name'] if drone else webSocket
 
     @staticmethod
-    def startFakeMission():
-        """Start a fake mission in a separated thread. For demo purposes only.
-
-        """
-        fakeDronesSet = DronesSet()
-        fakeDronesSet.setDrone('Drone # 1',
-                               Drone(name='Drone#1', speed=0, battery=0,
-                                     position=[0, 0, 0], timestamp=0,
-                                     state="exploring", ledOn=True, real=False,
-                                     ranges=[0, 0, 0, 0], yaw=0))
-        fakeDronesSet.setDrone('Drone # 2',
-                               Drone(name='Drone#2', speed=0, battery=0,
-                                     position=[0, 0, 0], timestamp=0,
-                                     state="exploring", ledOn=True, real=False,
-                                     ranges=[0, 0, 0, 0], yaw=0))
-        ArgosController.missionHandler = MissionHandler(
-            dronesSet=fakeDronesSet,
-            missionType='fake',
-            sendMessageCallable=lambda m: CommunicationService().sendToDashboardController(m)
-        )
-        Thread(target=ArgosController.simulateFakeMission).start()
-
-    @staticmethod
     def startMission(initialDronePos: dict, offsetDronePos: dict):
         """Start a mission. Order drones to takeoff and initialize a mission
         handler.
@@ -293,36 +268,3 @@ class ArgosController(metaclass=Singleton):
             offsetDronePos=offsetDronePos,
             sendMessageCallable=lambda m: CommunicationService().sendToDashboardController(m)
         )
-
-    @staticmethod
-    def simulateFakeMission():
-        """Start a fake mission using the droneFeed file to simulate flying
-        drones. For demo purposes only.
-        """
-        with open('data/droneFeed.json', 'r') as f:
-            jsonDronesFeed = json.load(f)
-            droneName: str
-            position: Vec2
-            points: List[Vec2]
-
-            frames = []
-
-            for feed in jsonDronesFeed['frames']:
-                frame = [
-                    feed[0],
-                    Vec2(x=feed[1][0], y=feed[1][1]),
-                    [Vec2(x=feed[2][0][0], y=feed[2][0][1]),
-                     Vec2(x=feed[2][1][0], y=feed[2][1][1]),
-                     Vec2(x=feed[2][2][0], y=feed[2][2][1]),
-                     Vec2(x=feed[2][3][0], y=feed[2][3][1])]
-                ]
-                frames.append(frame)
-
-            i = 0
-            for droneName, position, points in frames:
-                i += 1
-                time.sleep((i % 2) / 5)
-                ArgosController.missionHandler.handlePositionAndBorders(
-                    droneName, position, points)
-
-            ArgosController.missionHandler.endMission()
