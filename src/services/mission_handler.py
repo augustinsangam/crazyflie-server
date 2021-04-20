@@ -66,6 +66,8 @@ class MissionHandler:
         DatabaseService.saveMission(self.mission['id'], self.mission)
         sendMessageCallable(Message(type='mission', data=self.mission))
         self.kdtree = kdtree.create(dimensions=2)
+        self.maxRange = ((self.mission['type'] == 'argos') * self.ARGOS_MAX_RANGE
+                       + (self.mission['type'] == 'crazyradio') * self.CRAZYRADIO_MAX_RANGE)
 
     def onReceivedPositionAndRange(self, droneName: str, position: Vec2, yaw: float, ranges: List[int]):
         """Calculate the point indicated by the given ranges and orientation.
@@ -75,26 +77,31 @@ class MissionHandler:
           @param yaw: the angle of the drone in radiant.
           @param ranges: the list of ranges (front, left, back, right)
         """
+
+        realYaw = yaw
         points: List[Vec2] = []
         if self.mission['type'] == 'argos':
             xtemp = position['x']
             position['x'] = position['y']
             position['y'] = xtemp
         elif self.mission['type'] == 'crazyradio':
-            position['y'] = -position['y']
+            xtemp = position['x']
+            position['x'] = - position['y']
+            position['y'] = - xtemp
+            realYaw = yaw + math.pi / 4
+
         i = 0
-        maxRange = ((self.mission['type'] == 'argos') * self.ARGOS_MAX_RANGE
-                 + (self.mission['type'] == 'crazyradio') * self.CRAZYRADIO_MAX_RANGE)
         for r in ranges:
-            if r > maxRange:
+            if r > self.maxRange:
                 i += 1
                 continue
             point = Vec2(
-                x=round(r * self.RANGE_SCALE * math.cos(yaw + i * math.pi / 2)
+                x=round(r * self.RANGE_SCALE * math.cos(realYaw + i * math.pi / 2)
                         * (-2 * (self.mission['type'] == 'argos') + 1) + position['x']
                         + self.offsetDronePos[droneName]['x'] - self.initialDronePos[droneName]['x'], 4),
-                y=round(r * self.RANGE_SCALE * math.sin(yaw + i * math.pi / 2)
-                        + position['y'] + self.offsetDronePos[droneName]['y'] - self.initialDronePos[droneName]['y'], 4)
+                y=round(r * self.RANGE_SCALE * math.sin(realYaw + i * math.pi / 2)
+                        * (-2 * (self.mission['type'] != 'argos') + 1) + position['y']
+                        + self.offsetDronePos[droneName]['y'] - self.initialDronePos[droneName]['y'], 4)
             )
             if self.checkPointValidity((point['x'], point['y'])):
                 points.append(point)
