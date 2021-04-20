@@ -15,12 +15,12 @@ from src.models.connection import HandlerType
 from src.models.drone import Drone, droneDiff
 from src.models.message import Message
 from src.models.mission import Vec2
-from src.models.software_update import (LoadProjectData, LoadProjectLog,
-                                        LogType, ProjectType)
+from src.models.software_update import LoadProjectData, ProjectType
 from src.services.communications import CommunicationService
 from src.services.drones_set import DronesSet
 from src.services.mission_handler import MissionHandler
 from src.services.project_loader import ProjectLoader
+from src.utils.setup_logging import SUCCESS_LEVEL_NUM
 from src.utils.timestamp import getTimestamp
 
 
@@ -87,7 +87,7 @@ class CrazyradioController(metaclass=Singleton):
     @staticmethod
     def findNewDrones():
         while CrazyradioController.running:
-            nDrones = len(CrazyradioController.dronesSet.getDrones())
+            nDrones = len(CrazyradioController.clients)
             if not CrazyradioController.projectCurrentlyLoading and \
                     nDrones < CrazyradioController.MAX_DRONE_NUMBER:
                 interfaces = CrazyradioController.getAvailableInterfaces()
@@ -175,7 +175,8 @@ class CrazyradioController(metaclass=Singleton):
 
           @param client: the client witch called the function.
         """
-        logging.info(f'New Crazyradio client connected on uri {client.uri}')
+        logging.log(SUCCESS_LEVEL_NUM,
+                    f'New Crazyradio client connected on uri {client.uri}')
         newDrone = Drone(
             name=client.uri,
             timestamp=getTimestamp()
@@ -207,7 +208,7 @@ class CrazyradioController(metaclass=Singleton):
                     }
                 )
             )
-            # Keep the drone last state
+            # Comment to Keep the drone last state
             # CrazyradioController.dronesSet.removeDrone(client.uri)
 
     @staticmethod
@@ -417,17 +418,6 @@ class CrazyradioController(metaclass=Singleton):
         CrazyradioController.missionHandler.endMission()
 
     @staticmethod
-    def sendLogToDashboard(logType: LogType, log: str):
-        message = Message(
-            type='loadProjectLog',
-            data=LoadProjectLog(
-                log=log,
-                type=logType
-            )
-        )
-        CommunicationService().sendToDashboardController(message)
-
-    @staticmethod
     def loadProject(loadProjectData: LoadProjectData):
         if CrazyradioController.projectCurrentlyLoading:
             return
@@ -449,14 +439,12 @@ class CrazyradioController(metaclass=Singleton):
             clinks = list(CrazyradioController.dronesSet.getDrones().keys())
             crazyradioClients = set(CrazyradioController.clients)
             if len(crazyradioClients) == 0:
-                CrazyradioController.sendLogToDashboard(
-                    'error', 'No drone to flash...')
+                logging.error('No drone to flash...')
             else:
                 for client in crazyradioClients:
                     client.closeClient()
                 CrazyradioController.projectLoader.flash(clinks)
                 time.sleep(1)
-                CrazyradioController.sendLogToDashboard(
-                    'info', 'About to reconnect to newly flashed drones...')
+                logging.info('About to reconnect to newly flashed drones...')
         # At the end
         CrazyradioController.projectCurrentlyLoading = False

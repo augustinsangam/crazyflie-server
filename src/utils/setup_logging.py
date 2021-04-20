@@ -1,10 +1,11 @@
 import logging
 
 import coloredlogs
-
 from src.models.message import Message
-from src.models.software_update import LogType, LoadProjectLog
+from src.models.software_update import LoadProjectLog, LogType
 from src.services.communications import CommunicationService
+
+SUCCESS_LEVEL_NUM = 25
 
 
 class DashboardLogger(logging.Handler):
@@ -41,6 +42,8 @@ def setupLogging() -> None:
 
     coloredlogs.install(level=logging.INFO, fmt=fmt)
 
+    logging.addLevelName(SUCCESS_LEVEL_NUM, 'SUCCESS')
+
     logging.getLogger('cflib.crtp').setLevel(logging.ERROR)
     logging.getLogger('flib.drivers.cfusb').setLevel(logging.ERROR)
     logging.getLogger('cflib.crazyflie').setLevel(logging.ERROR)
@@ -57,5 +60,3 @@ def setupLogging() -> None:
     for handler in rootLogger.handlers:
         if isinstance(handler, logging.FileHandler):
             handler.setFormatter(formatter)
-
-

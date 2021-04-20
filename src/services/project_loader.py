@@ -1,48 +1,48 @@
 import logging
 import os
 import pathlib
-from typing import Optional, List
+from typing import List, Optional
 
 import cflib.bootloader
 import cflib.crtp
 import docker
-
 from src.models.software_update import ProjectType
+from src.utils.setup_logging import SUCCESS_LEVEL_NUM
 
 
 class ProjectLoader:
     client = docker.from_env()
     cwd = pathlib.Path.cwd()
     firmwarePath = cwd / '..' / 'firmware'
+    outPath = cwd / 'out'
     volumes = {
-        str(cwd / '..' / '.git'): {
-            'bind': '/.git',
-            'mode': 'ro',
-        },
-        str(firmwarePath): {
-            'bind': '/firmware',
-            'mode': 'ro',
-        },
-        str(cwd / 'out'): {
-            'bind': '/out',
-            'mode': 'rw',
-        },
+        # str(cwd / '..' / '.git'): {
+        #    'bind': '/.git',
+        #    'mode': 'ro',
+        # },
+        # str(firmwarePath): {
+        #    'bind': '/firmware',
+        #    'mode': 'ro',
+        # },
+        # str(outPath): {
+        #    'bind': '/out',
+        #    'mode': 'rw',
+        # },
     }
 
-    containerImage = 'firmware'
+    containerImage = 'firmware_image'
     containerName = 'firmware_cload'
     lastProjectType: Optional[ProjectType] = None
 
-    targets = [cflib.bootloader.Target('cf2', 'stm32', 'fw')] # noqa
+    targets = [cflib.bootloader.Target('cf2', 'stm32', 'fw')]  # noqa
 
     sandboxSrc = firmwarePath / 'projects' / 'sandbox' / 'src' / 'main.cpp'
 
     def __init__(self, cf2_bin: pathlib.Path = cwd / 'out' / 'cf2.bin'):
         logging.info(f'Current working directory is {ProjectLoader.cwd}')
         self.bin = cf2_bin
-        outDir = pathlib.Path('out')
-        if not outDir.is_dir():
-            outDir.mkdir()
+        if not ProjectLoader.outPath.is_dir():
+            ProjectLoader.outPath.mkdir()
 
     @staticmethod
     def createContainer(projectType: ProjectType):
@@ -54,7 +54,8 @@ class ProjectLoader:
             environment=environment,
             # firmware=rr
             labels={ProjectLoader.containerName: projectType},
-            volumes=ProjectLoader.volumes
+            volumes=ProjectLoader.volumes,
+            volumes_from=['firmware_container']
         )
 
     @staticmethod
@@ -94,10 +95,11 @@ class ProjectLoader:
 
         statusCode = result['StatusCode']
         if statusCode != 0:
-            logging.error(f'Compilation failed! (exit status code is {statusCode})')
+            logging.error(
+                f'Compilation failed! (exit status code is {statusCode})')
             return False
 
-        logging.log(logging.NOTSET, 'Code compiled successfully')
+        logging.log(SUCCESS_LEVEL_NUM, 'Code compiled successfully')
 
         if not self.bin.exists():
             logging.error(f'Executable {self.bin} not found!')
@@ -128,4 +130,4 @@ class ProjectLoader:
             bl.reset_to_firmware()
 
             bl.close()
-            logging.log(logging.NOTSET, f'...success')
+            logging.log(SUCCESS_LEVEL_NUM, f'...success')
