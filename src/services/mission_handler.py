@@ -90,6 +90,9 @@ class MissionHandler:
             position['y'] = - xtemp
             realYaw = yaw + math.pi / 4
 
+        xPos = position['x'] + self.offsetDronePos[droneName]['x'] - self.initialDronePos[droneName]['x']
+        yPos = position['x'] + self.offsetDronePos[droneName]['y'] - self.initialDronePos[droneName]['y']
+
         i = 0
         for r in ranges:
             if r > self.maxRange:
@@ -97,17 +100,15 @@ class MissionHandler:
                 continue
             point = Vec2(
                 x=round(r * self.RANGE_SCALE * math.cos(realYaw + i * math.pi / 2)
-                        * (-2 * (self.mission['type'] == 'argos') + 1) + position['x']
-                        + self.offsetDronePos[droneName]['x'] - self.initialDronePos[droneName]['x'], 4),
+                        * (-2 * (self.mission['type'] == 'argos') + 1) + xPos, 4),
                 y=round(r * self.RANGE_SCALE * math.sin(realYaw + i * math.pi / 2)
-                        * (-2 * (self.mission['type'] != 'argos') + 1) + position['y']
-                        + self.offsetDronePos[droneName]['y'] - self.initialDronePos[droneName]['y'], 4)
+                        * (-2 * (self.mission['type'] != 'argos') + 1) + yPos, 4)
             )
             if self.checkPointValidity((point['x'], point['y'])):
                 points.append(point)
             i += 1
         self.handlePositionAndBorders(
-            droneName, position, points)
+            droneName, Vec2(x=xPos, y=yPos), points)
 
     def checkPointValidity(self, point: Tuple[float, float]) -> bool:
         neighbor = self.kdtree.search_nn(point)
