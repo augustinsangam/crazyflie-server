@@ -36,8 +36,8 @@ class MissionHandler:
         """
         self.RANGE_SCALE: float = (
             missionType == 'argos') * self.ARGOS_SCALE + (missionType == 'crazyradio') * self.CRAZYRADIO_SCALE
-        self.maxRange = ((self.mission['type'] == 'argos') * self.ARGOS_MAX_RANGE
-                         + (self.mission['type'] == 'crazyradio') * self.CRAZYRADIO_MAX_RANGE)
+        self.maxRange = ((missionType == 'argos') * self.ARGOS_MAX_RANGE
+                         + (missionType == 'crazyradio') * self.CRAZYRADIO_MAX_RANGE)
         drones: List[Drone] = list(dronesSet.getDrones().values())
         if len(drones) == 0:
             logging.info("Mission rejected: no drones")
@@ -47,8 +47,6 @@ class MissionHandler:
             return
         self.initialDronePos = initialDronePos
         self.offsetDronePos = offsetDronePos
-        logging.error(f"Initial {initialDronePos}")
-        logging.error(f"Offset {offsetDronePos}")
         self.dronesSet = dronesSet
         self.sendMessageCallable = sendMessageCallable
         missionDrones: MissionDrones = {
