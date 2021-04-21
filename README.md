@@ -54,7 +54,7 @@ pip install -U -r requirements.txt
 # build
 docker build -t crazyflie-server .
 # run
-docker run -it --name crazyflie-server -p 3995:3995 -p 5000:5000 crazyflie-server
+docker run -it -p 3995:3995 -p 5000:5000 -v "${PWD}:/server:ro" -v "${PWD}/data:/build/data" -v '/var/run/docker.sock:/var/run/docker.sock' crazyflie-server
 ```
 
 ## Documentation generation
