@@ -58,6 +58,8 @@ docker run -it --name crazyflie-server -p 3995:3995 -p 5000:5000 crazyflie-serve
 ```
 
 ## Documentation generation
+This project comes with an automatically generated documentation located in `doc/latex/refman.pdf`.
+
 To generate the project's documentation :
 
 * Install Doxygen
