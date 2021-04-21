@@ -86,6 +86,9 @@ class CrazyradioController(metaclass=Singleton):
 
     @staticmethod
     def findNewDrones():
+        """Try to reconnect to new drones every 5 seconds.
+
+        """
         while CrazyradioController.running:
             nDrones = len(CrazyradioController.clients)
             if not CrazyradioController.projectCurrentlyLoading and \
@@ -114,8 +117,8 @@ class CrazyradioController(metaclass=Singleton):
 
     @staticmethod
     def getAvailableInterfaces() -> List:
-        """
-        TODO
+        """Scans for available drone connections and adds them to the list of clients.
+
         """
         available = []
         first = CrazyradioController.FIRST_DRONE_ADDRESS
@@ -213,9 +216,9 @@ class CrazyradioController(metaclass=Singleton):
 
     @staticmethod
     def onClientReceivedMessage(client: CrazyradioClient, data) -> None:
-        """Called by a client when it receives a message. The message parsed
-        as json. It updates the drone stored status, then sends the message
-        to the dashboards.
+        """Called by a client when it receives a message. The message is first decoded then
+        it updates the drone stored status. Finnally it sends the message
+        to the dashboards and the mission controller.
 
           @param client: the client witch called the function.
           @param data: the data of the message in bytes received by the client.
@@ -305,8 +308,9 @@ class CrazyradioController(metaclass=Singleton):
     @staticmethod
     def onControllerReceivedMessage(message: Message):
         """Decide what to do with the given message. It can start a mission
-        or send the message as is to the clients. @param message: the message
-        received.
+        or send the message as is to the clients.
+
+          @param message: the message received.
         """
         if message['type'] == 'startMission':
             missionRequestData: dict = message['data']
@@ -362,10 +366,9 @@ class CrazyradioController(metaclass=Singleton):
 
     @staticmethod
     def sendMessageToClient(client: CrazyradioClient, message: Message):
-        """Sends the specified message to the specified client after
-        converting it from json to string.
+        """Sends the specified message to the specified client.
 
-          @param client: the socket to send the message.
+          @param client: the client to send the message.
           @param message: the message to send.
         """
         client.sendMessage(message)
@@ -385,6 +388,8 @@ class CrazyradioController(metaclass=Singleton):
         """Start a mission. Order drones to takeoff and initialize a mission
         handler.
 
+          @param initialDronePos: the drone position at the moment of the mission creation.
+          @param offsetDronePos: the drone position offset given by the dashboard.
         """
         CrazyradioController.sendMessage(
             Message(
@@ -406,6 +411,9 @@ class CrazyradioController(metaclass=Singleton):
 
     @staticmethod
     def stopMission():
+        """Stops the current mission and send to the client th emessage to do so.
+
+        """
         CrazyradioController.sendMessage(
             Message(
                 type='stopMission',
@@ -419,6 +427,10 @@ class CrazyradioController(metaclass=Singleton):
 
     @staticmethod
     def loadProject(loadProjectData: LoadProjectData):
+        """
+
+          @param loadProjectData: the data of the project to load
+        """
         if CrazyradioController.projectCurrentlyLoading:
             return
 

@@ -27,7 +27,6 @@ class ArgosController(metaclass=Singleton):
     TCPServer: socket = None
     running = True
     dronesSet = DronesSet()
-    clients: Set[ArgosClient] = set()
     missionHandler: MissionHandler = None
     client: ArgosClient = None
 
@@ -132,11 +131,11 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def onClientReceivedMessage(client: ArgosClient, message: bytes) -> None:
-        """Called by a client when it receives a message. The message is
+        """Called by the client when it receives a message. The message is
         first decoded from byte to ascii, then parsed as json. It updates the
-        drone stored status, then sends the message to the dashboards.
+        drone stored status, then sends the message to the dashboards and
+        the mission handler if it exists.
 
-          @param client: the client witch called the function.
           @param message: the message in bytes received by the client.
         """
         try:
@@ -179,9 +178,8 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def onClientRaisedError(client: ArgosClient, error: Exception) -> None:
-        """Called when a client raises an error while it waits for messages.
+        """Called when the client raises an error while it waits for messages.
 
-          @param client: the client witch called the function.
           @param error: the exception  raised by the client.
         """
         logging.info(
@@ -190,18 +188,19 @@ class ArgosController(metaclass=Singleton):
     @staticmethod
     def onControllerReceivedMessage(message: Message):
         """Decide what to do with the given message. It can start a mission
-        or send the message as is to the clients. @param message: the message
-        received.
+        or send the message as is to the clients.
+
+          @param message: the message received by the controller.
         """
         if message['type'] == 'startMission':
             missionRequestData: dict = message['data']
             if missionRequestData['type'] == 'argos':
                 initialDronePos = {}
-                offsetDronePos = {}
+                offsetDronePos = {} if 'dronesPositions' not in missionRequestData \
+                    else missionRequestData['dronesPositions']
                 for drone in ArgosController.dronesSet.getDrones().values():
                     initialDronePos[drone['name']] = Vec2(
                         x=drone['position'][0], y=drone['position'][1])
-                    offsetDronePos[drone['name']] = Vec2(x=0, y=0)
                 ArgosController.startMission(initialDronePos, offsetDronePos)
                 if ArgosController.missionHandler.mission['status'] == 'inProgress':
                     for drone in ArgosController.dronesSet.getDrones().values():
@@ -222,8 +221,7 @@ class ArgosController(metaclass=Singleton):
 
     @staticmethod
     def sendMessage(message: Message) -> None:
-        """Sends the specified message to the client. Start a mission if the
-        message type is 'startMission'.
+        """Sends the specified message to the client.
 
           @param message: the message to send.
         """
@@ -243,20 +241,12 @@ class ArgosController(metaclass=Singleton):
         clientSocket.send(bytes(messageStr + '\n', 'ascii'))
 
     @staticmethod
-    def getDroneIdentifier(webSocket) -> Union[Drone, Any]:
-        """Find the drone associated with the specified socket. If the drone
-        name isn't yet registered, the socket is returned. NOT USED ANYMORE
-
-          @param webSocket: the socket of the searched drone.
-        """
-        drone: Drone = ArgosController.dronesSet.getDrone(webSocket)
-        return drone['name'] if drone else webSocket
-
-    @staticmethod
     def startMission(initialDronePos: dict, offsetDronePos: dict):
         """Start a mission. Order drones to takeoff and initialize a mission
         handler.
 
+          @param initialDronePos: the drone position at the moment of the mission creation.
+          @param offsetDronePos: the drone position offset given by the dashboard.
         """
         logging.info("\n START MISSION \n")
         for drone in ArgosController.dronesSet.getDrones():

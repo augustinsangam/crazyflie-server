@@ -1,3 +1,5 @@
+# Mimic a simulated drone. For testing purpose only.
+
 import socket
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

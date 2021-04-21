@@ -151,6 +151,10 @@ class DashboardController(metaclass=Singleton):
 
     @staticmethod
     def sendAllMissions(socket) -> None:
+        """Send all the saved mission in the database to the socket.
+
+          @param socket: the socket to send the info to.
+        """
         missions = DatabaseService.getAllMissions()
         currentMission = CommunicationService().getCurrentMission()
         if currentMission is not None:
@@ -166,7 +170,10 @@ class DashboardController(metaclass=Singleton):
 
     @staticmethod
     def onControllerReceivedMessage(message: Message):
-        """TODO"""
+        """Sends the given messages to all the clients.
+
+          @param message: the message received by the controller.
+        """
         for client in DashboardController.clients:
             if client.socket is None or client.socket.closed:
                 continue
