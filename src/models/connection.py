@@ -21,6 +21,12 @@ class Connection:
         self.handlers = defaultdict(list)
 
     def addCallback(self, handlerType: HandlerType, callback: Callable, *args) -> None:
+        """ Add a new handler for the given callback.
+
+          @param handlerType: the type of the handler.
+          @param callback: the callback function.
+          @param args: the params to give the callback fucntion.
+        """
         handler = Handler(
             callback=callback,
             args=args
@@ -28,6 +34,11 @@ class Connection:
         self.handlers[handlerType].append(handler)
 
     def removeCallback(self, handlerType: HandlerType, callback: Callable) -> None:
+        """Removes the given callback.
+
+          @param handlerType: the type of the handler
+          @param callback:
+        """
         if handlerType not in self.handlers:
             return
 
@@ -37,6 +48,11 @@ class Connection:
         self.handlers[handlerType] = list(filter(filterFunc, self.handlers[handlerType]))
 
     def callAllCallbacks(self, handlerType: HandlerType, *args) -> None:
+        """Call all the registered callbacks of the same type of handler.
+
+          @param handlerType: the type of handler to call the callbacks.
+          @param args: the arguments to give to the callback.
+        """
         handler: Handler
         for handler in self.handlers[handlerType]:
             callback = handler['callback']

@@ -46,6 +46,10 @@ class ProjectLoader:
 
     @staticmethod
     def createContainer(projectType: ProjectType):
+        """Create a docker container for the given project type.
+
+          @param projectType: the type of the project to create a container for.
+        """
         environment = {
             'CF2_PROJECT': projectType,
         }
@@ -60,6 +64,10 @@ class ProjectLoader:
 
     @staticmethod
     def getContainer(projectType: ProjectType):
+        """Returns the container with the same given project type, or create a new one.
+
+          @param projectType: the project type of the container searched.
+        """
         containers = ProjectLoader.client.containers.list(
             all=True,
             filters={
@@ -72,6 +80,11 @@ class ProjectLoader:
 
     def setup(self, projectType: ProjectType, code: Optional[str]
               ) -> bool:
+        """Run and try to build the code given in a container for the given project type.
+
+          @param projectType: the type of the project to execute.
+          @param code:the code to compile.
+        """
         if projectType == 'sandbox':
             with ProjectLoader.sandboxSrc.open('w') as out:
                 out.write(code)
@@ -112,6 +125,10 @@ class ProjectLoader:
         return True
 
     def flash(self, clinks: List[str]):
+        """Try to flash the drone with the compilated code.
+
+          @param clinks: the compilated code.
+        """
         for clink in clinks:
             logging.info(f'Flashing {clink}...')
             bl = cflib.bootloader.Bootloader(clink)

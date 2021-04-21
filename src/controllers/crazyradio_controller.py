@@ -427,7 +427,7 @@ class CrazyradioController(metaclass=Singleton):
 
     @staticmethod
     def loadProject(loadProjectData: LoadProjectData):
-        """
+        """ Starts a thread to load the given project.
 
           @param loadProjectData: the data of the project to load
         """
@@ -447,6 +447,11 @@ class CrazyradioController(metaclass=Singleton):
 
     @staticmethod
     def loadProjectThread(projectType: ProjectType, code=None):
+        """Stops the drone connection to flash it.
+
+          @param projectType:
+          @param code:
+        """
         if CrazyradioController.projectLoader.setup(projectType, code):
             clinks = list(CrazyradioController.dronesSet.getDrones().keys())
             crazyradioClients = set(CrazyradioController.clients)

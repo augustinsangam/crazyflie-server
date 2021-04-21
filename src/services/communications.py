@@ -52,6 +52,9 @@ class CommunicationService(metaclass=Singleton):
             list(self.crazyradioController.dronesSet.getDrones().values())
 
     def getCurrentMission(self) -> Optional[Mission]:
+        """Returns the current active mission.
+
+        """
         argosMission = self.argosController.getCurrentMission()
         if argosMission is not None:
             return argosMission

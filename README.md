@@ -49,16 +49,6 @@ pip install -U -r requirements.txt
 >requirements.txt pip freeze
 ```
 
-## Python client for testing TCP server
-
-```py
-import socket
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(('127.0.0.1', 3995))
-client.send('')
-response = client.recv(4096)
-```
-
 ## Docker
 ```bash
 # build

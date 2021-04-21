@@ -13,12 +13,15 @@ from src.utils.css_predifined_colors import CSS_PREDEFINED_COLORS
 from src.utils.timestamp import getTimestamp
 
 
+
 class MissionHandler:
     MAX_DISTANCE = 0.21
     MIN_POINTS_DIST = 0.002
     TAKE_OFF_DELAY = 20
     CRAZYRADIO_MAX_RANGE = 500
     ARGOS_MAX_RANGE = 65530
+    CRAZYRADIO_SCALE = 0.001
+    ARGOS_SCALE = 0.01
 
     def __init__(self, dronesSet: DronesSet, missionType: MissionType, initialDronePos: dict, offsetDronePos: dict,
                  sendMessageCallable: Callable[[Message], None]):
@@ -32,7 +35,9 @@ class MissionHandler:
           call to send mission pulses.
         """
         self.RANGE_SCALE: float = (
-            missionType == 'argos') * 0.01 + (missionType == 'crazyradio') * 0.001
+            missionType == 'argos') * self.ARGOS_SCALE + (missionType == 'crazyradio') * self.CRAZYRADIO_SCALE
+        self.maxRange = ((self.mission['type'] == 'argos') * self.ARGOS_MAX_RANGE
+                         + (self.mission['type'] == 'crazyradio') * self.CRAZYRADIO_MAX_RANGE)
         drones: List[Drone] = list(dronesSet.getDrones().values())
         if len(drones) == 0:
             logging.info("Mission rejected: no drones")
@@ -67,11 +72,10 @@ class MissionHandler:
         # DatabaseService.saveMission(self.mission['id'], self.mission)
         sendMessageCallable(Message(type='mission', data=self.mission))
         self.kdtree = kdtree.create(dimensions=2)
-        self.maxRange = ((self.mission['type'] == 'argos') * self.ARGOS_MAX_RANGE
-                         + (self.mission['type'] == 'crazyradio') * self.CRAZYRADIO_MAX_RANGE)
 
     def onReceivedPositionAndRange(self, droneName: str, position: Vec2, yaw: float, ranges: List[int]):
         """Calculate the point indicated by the given ranges and orientation.
+         Translate to coordinates from the received axis to the dashboard axis.
 
           @param droneName: the name of the drone witch sent the informations.
           @param position: the 2D position of the drone.
@@ -116,6 +120,10 @@ class MissionHandler:
             droneName, Vec2(x=xPos, y=yPos), points)
 
     def checkPointValidity(self, point: Tuple[float, float]) -> bool:
+        """Check if the given point isn't too close to an already existing point.
+
+         param point: the point to check.
+        """
         neighbor = self.kdtree.search_nn(point)
         if not neighbor:
             self.kdtree.add(point)
@@ -170,10 +178,11 @@ class MissionHandler:
         with the newly found points.
 
           @param missionPoints: the points witch are not in a shape yet.
-          @param currentShape: TODO
+          @param currentShape: the current shape in witch we add points
           @param pointsToAdd: a list of the points found in the previous
-          iteration. @param currentShape: the current shape in witch the
-          pointsToAdd will be added.
+            iteration.
+          @param currentShape: the current shape in witch the
+            pointsToAdd will be added.
         """
         for point in pointsToAdd:
             currentShape.append(point['value'])
@@ -201,6 +210,9 @@ class MissionHandler:
                     missionPoints, list(nexPointsToAdd.values()), currentShape)
 
     def checkMissionEnd(self) -> bool:
+        """Check if every drone is landed to end the mission.
+
+        """
         if getTimestamp() - self.mission['timestamp'] < self.TAKE_OFF_DELAY:
             return False
         drone: Drone
@@ -228,6 +240,9 @@ class MissionHandler:
             Message(type='missionPulse', data=missionPulse))
 
     def stopMission(self):
+        """Force stop the mission and register it as failed.
+
+        """
         status: MissionStatus = 'failed'
         missionPulse = MissionPulse(
             id=self.mission['id'],

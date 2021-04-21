@@ -248,7 +248,7 @@ class ArgosController(metaclass=Singleton):
           @param initialDronePos: the drone position at the moment of the mission creation.
           @param offsetDronePos: the drone position offset given by the dashboard.
         """
-        logging.info("\n START MISSION \n")
+        logging.info("START MISSION")
         for drone in ArgosController.dronesSet.getDrones():
             ArgosController.sendMessage(
                 Message(
