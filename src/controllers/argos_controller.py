@@ -6,14 +6,14 @@ import socket
 import time
 from io import StringIO
 from threading import Thread
-from typing import Any, List, Set, Union
+from typing import Any, List, Optional, Set, Union
 
 from src.clients.argos_client import ArgosClient
 from src.metaclasses.singleton import Singleton
 from src.models.connection import HandlerType
 from src.models.drone import Drone, droneDiff
 from src.models.message import Message
-from src.models.mission import Vec2
+from src.models.mission import Mission, Vec2
 from src.services.communications import CommunicationService
 from src.services.drones_set import DronesSet
 from src.services.mission_handler import MissionHandler
@@ -142,7 +142,8 @@ class ArgosController(metaclass=Singleton):
         try:
             messageStr = message.decode('utf-8')
             messages = list(filter(lambda x: x, messageStr.split('\n')))
-            parsedMessages: List = list(map(lambda x: json.load(StringIO(x)), messages))
+            parsedMessages: List = list(
+                map(lambda x: json.load(StringIO(x)), messages))
         except ValueError as e:
             logging.error(e)
             logging.error(
@@ -153,7 +154,8 @@ class ArgosController(metaclass=Singleton):
                     return
 
                 pulseData: dict = parsedMessage['data']
-                oldDrone = ArgosController.dronesSet.getDrone(pulseData['name'])
+                oldDrone = ArgosController.dronesSet.getDrone(
+                    pulseData['name'])
                 if not oldDrone:
                     oldDrone = {}
                 pulseData: dict = {**oldDrone, **pulseData, "real": False}
@@ -197,21 +199,25 @@ class ArgosController(metaclass=Singleton):
                 initialDronePos = {}
                 offsetDronePos = {}
                 for drone in ArgosController.dronesSet.getDrones().values():
-                    initialDronePos[drone['name']] = Vec2(x=drone['position'][0], y=drone['position'][1])
+                    initialDronePos[drone['name']] = Vec2(
+                        x=drone['position'][0], y=drone['position'][1])
                     offsetDronePos[drone['name']] = Vec2(x=0, y=0)
                 ArgosController.startMission(initialDronePos, offsetDronePos)
                 if ArgosController.missionHandler.mission['status'] == 'inProgress':
                     for drone in ArgosController.dronesSet.getDrones().values():
-                        ArgosController.sendMessage(Message(type='startMission', data={'name': drone['name']}))
+                        ArgosController.sendMessage(
+                            Message(type='startMission', data={'name': drone['name']}))
             return
         elif message['type'] == 'returnToBase':
             for drone in ArgosController.dronesSet.getDrones().values():
-                ArgosController.sendMessage(Message(type='returnToBase', data={'name': drone['name']}))
+                ArgosController.sendMessage(
+                    Message(type='returnToBase', data={'name': drone['name']}))
         elif message['type'] == 'stopMission':
             if ArgosController.missionHandler is not None:
                 ArgosController.missionHandler.stopMission()
                 for drone in ArgosController.dronesSet.getDrones().values():
-                    ArgosController.sendMessage(Message(type='stopMission', data={'name': drone['name']}))
+                    ArgosController.sendMessage(
+                        Message(type='stopMission', data={'name': drone['name']}))
                 ArgosController.missionHandler = None
 
     @staticmethod
@@ -268,3 +274,9 @@ class ArgosController(metaclass=Singleton):
             offsetDronePos=offsetDronePos,
             sendMessageCallable=lambda m: CommunicationService().sendToDashboardController(m)
         )
+
+    @staticmethod
+    def getCurrentMission() -> Optional[Mission]:
+        if ArgosController.missionHandler is not None:
+            return ArgosController.missionHandler.mission
+        return None

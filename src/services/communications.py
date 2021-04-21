@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Optional
 
 from src.metaclasses.singleton import Singleton
 from src.models.drone import Drone
 from src.models.message import Message
+from src.models.mission import Mission
 
 
 class CommunicationService(metaclass=Singleton):
@@ -49,3 +50,9 @@ class CommunicationService(metaclass=Singleton):
         """
         return list(self.argosController.dronesSet.getDrones().values()) +\
             list(self.crazyradioController.dronesSet.getDrones().values())
+
+    def getCurrentMission(self) -> Optional[Mission]:
+        argosMission = self.argosController.getCurrentMission()
+        if argosMission is not None:
+            return argosMission
+        return self.crazyradioController.getCurrentMission()

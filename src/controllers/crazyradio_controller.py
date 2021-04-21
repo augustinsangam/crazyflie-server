@@ -5,7 +5,7 @@ import threading
 import time
 from enum import IntEnum
 from threading import Thread
-from typing import Any, List, Set, Union
+from typing import Any, List, Optional, Set, Union
 
 import cflib.crtp
 from cflib.crtp.radiodriver import RadioManager  # noqa
@@ -14,7 +14,7 @@ from src.metaclasses.singleton import Singleton
 from src.models.connection import HandlerType
 from src.models.drone import Drone, droneDiff
 from src.models.message import Message
-from src.models.mission import Vec2
+from src.models.mission import Mission, Vec2
 from src.models.software_update import LoadProjectData, ProjectType
 from src.services.communications import CommunicationService
 from src.services.drones_set import DronesSet
@@ -448,3 +448,9 @@ class CrazyradioController(metaclass=Singleton):
                 logging.info('About to reconnect to newly flashed drones...')
         # At the end
         CrazyradioController.projectCurrentlyLoading = False
+
+    @staticmethod
+    def getCurrentMission() -> Optional[Mission]:
+        if CrazyradioController.missionHandler is not None:
+            return CrazyradioController.missionHandler.mission
+        return None

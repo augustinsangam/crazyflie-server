@@ -7,7 +7,6 @@ from typing import List, Set
 from flask import Flask
 from flask_threaded_sockets import Sockets, ThreadedWebsocketServer
 from flask_threaded_sockets.websocket import WebSocket
-
 from src.clients.dashboard_client import DashboardClient
 from src.metaclasses.singleton import Singleton
 from src.models.connection import HandlerType
@@ -153,6 +152,9 @@ class DashboardController(metaclass=Singleton):
     @staticmethod
     def sendAllMissions(socket) -> None:
         missions = DatabaseService.getAllMissions()
+        currentMission = CommunicationService().getCurrentMission()
+        if currentMission is not None:
+            missions = [*missions, currentMission]
         logging.info(
             f'Sending all saved missions ({len(missions)} in total) to new '
             f'Dashboard client')

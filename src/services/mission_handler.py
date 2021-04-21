@@ -13,8 +13,6 @@ from src.utils.css_predifined_colors import CSS_PREDEFINED_COLORS
 from src.utils.timestamp import getTimestamp
 
 
-
-
 class MissionHandler:
     MAX_DISTANCE = 0.21
     MIN_POINTS_DIST = 0.002
@@ -33,7 +31,8 @@ class MissionHandler:
           for demo purposes only. @param sendMessageCallable: the function to
           call to send mission pulses.
         """
-        self.RANGE_SCALE: float = (missionType == 'argos') * 0.01 + (missionType == 'crazyradio') * 0.001
+        self.RANGE_SCALE: float = (
+            missionType == 'argos') * 0.01 + (missionType == 'crazyradio') * 0.001
         drones: List[Drone] = list(dronesSet.getDrones().values())
         if len(drones) == 0:
             logging.info("Mission rejected: no drones")
@@ -65,11 +64,11 @@ class MissionHandler:
             shapes=[],
             points=[]
         )
-        DatabaseService.saveMission(self.mission['id'], self.mission)
+        # DatabaseService.saveMission(self.mission['id'], self.mission)
         sendMessageCallable(Message(type='mission', data=self.mission))
         self.kdtree = kdtree.create(dimensions=2)
         self.maxRange = ((self.mission['type'] == 'argos') * self.ARGOS_MAX_RANGE
-                       + (self.mission['type'] == 'crazyradio') * self.CRAZYRADIO_MAX_RANGE)
+                         + (self.mission['type'] == 'crazyradio') * self.CRAZYRADIO_MAX_RANGE)
 
     def onReceivedPositionAndRange(self, droneName: str, position: Vec2, yaw: float, ranges: List[int]):
         """Calculate the point indicated by the given ranges and orientation.
@@ -146,7 +145,7 @@ class MissionHandler:
             self.mission['dronesPositions'][droneName] = position
             self.mission['dronesPaths'][droneName].append(position)
         self.mission['points'] = [*self.mission['points'], *newMissionPoints]
-        DatabaseService.saveMission(self.mission['id'], self.mission)
+        # DatabaseService.saveMission(self.mission['id'], self.mission)
         if len(missionPulse) > 1:
             self.sendMessageCallable(
                 Message(type='missionPulse', data=missionPulse))
@@ -216,7 +215,7 @@ class MissionHandler:
         """End the mission. Save the ’done’ status to the database and inform
         the dashboards.
         """
-        #self.assignPointsToShapes()
+        # self.assignPointsToShapes()
         status: MissionStatus = 'done'
         missionPulse = MissionPulse(
             id=self.mission['id'],
@@ -233,7 +232,7 @@ class MissionHandler:
         missionPulse = MissionPulse(
             id=self.mission['id'],
             status=status,
-        ) # noqa
+        )  # noqa
         self.mission['status'] = status
         DatabaseService.saveMission(self.mission['id'], self.mission)
         self.sendMessageCallable(
