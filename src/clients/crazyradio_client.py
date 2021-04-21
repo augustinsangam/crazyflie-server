@@ -83,6 +83,8 @@ class CrazyradioClient:
     def _console(self, packet):
         """
         Callback for data received from the copter.
+
+          @param packet: the packet received.
         """
         # This might be done prettier ;-)
         try:
